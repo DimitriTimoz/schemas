@@ -5,14 +5,17 @@ use std::path::Path;
 
 use build_helpers::parse_file::read_csv_schema;
 
-mod build_helpers;
+pub mod build_helpers;
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
-    let dest_path = Path::new(&out_dir).join("gen.rs");
-    read_csv_schema();
-    let mut f = File::create(&dest_path).unwrap();
-
-    // Lire le fichier ici et écrire la sortie à `f`.
-    // ...
+    println!("{}", out_dir);
+    let dest_path = Path::new(&out_dir).join("properties.rs");
+    let mut to_write = read_csv_schema();
+    let mut file = File::create(&dest_path).unwrap();
+    let properties = to_write.write_properties_structs();
+    
+    // Write properties in file
+    file.write_all(properties.as_bytes()).unwrap();
+    
 }

@@ -1,2 +1,2 @@
-pub use crate::item_type::*;
+pub use crate::properties::*;
 pub use crate::scope::*;

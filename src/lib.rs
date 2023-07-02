@@ -1,3 +1,3 @@
 pub mod scope;
-pub mod item_type;
+pub mod properties;
 pub mod prelude;
