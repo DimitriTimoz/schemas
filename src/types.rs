@@ -16,7 +16,7 @@ pub struct Date(String);
 pub struct DateTime(String);
 
 #[derive(Debug, Clone)]
-pub struct Url(String);
+pub struct URL(String);
 
 #[derive(Debug, Clone)]
 pub struct Time(String);
