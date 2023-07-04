@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use convert_case::{Casing, Case};
 
 use super::parse_file::{Table};
@@ -8,7 +6,7 @@ use super::parse_file::{Table};
 pub struct ToWrite {
 }
 
-const TO_REPLACE: [[&str; 2]; 5] = [["Result", "ResultType"], ["Abstract", "AbstractType"], ["Box", "BoxType"], ["Yield", "YieldType"], ["Option", "OptionType"]];
+const TO_REPLACE: [[&str; 2]; 6] = [["Result", "ResultType"], ["Abstract", "AbstractType"], ["Box", "BoxType"], ["Yield", "YieldType"], ["Option", "OptionType"], ["PriceRange", "PriceRangeType"]];
 const PRIMITIVE_TYPES: [&str; 7] = ["text", "number", "boolean", "date", "datetime", "url", "time"];
 const DIGITS: [&str; 10] = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
 
@@ -38,29 +36,48 @@ fn id_to_token(id: &str) -> String {
 
 impl ToWrite {
 
-    pub(crate) fn write_files(table: &Table) -> (String, String) {
+    pub(crate) fn write_files(table: &mut Table) -> (String, String) {
         let mut props_output = String::new();
         let mut classes_output = String::new();
 
         // properties.rs
         for property in table.properties.values() {
-            let mut prop_output = String::from("#[derive(Debug, Clone)]\n");
+            let mut prop_output = format!("/// {}\n#[derive(Debug, Clone)]\n", property.comment.replace('\n', "\n/// "));
+
             match property.range_includes.len() {
                 0 => {
-                    println!("Property {} has no range includes.", property.id);
-                    continue;
+                    println!("Property {} has no range inclDudes.", property.id);
+                    prop_output += &format!("pub struct {}Prop;\n", id_to_token(&property.label));
                 },
                 1 => {
                     // Struct
                     let range = property.range_includes.first().expect("Range includes should have at least one element.");
-                    prop_output += &format!("pub struct {}({});\n", id_to_token(&property.label), id_to_token(&range.id));
+                    let args = if !property.sub_properties.is_empty() {
+                        let mut args = String::from("{\n");
+                        for sub_prop in &property.sub_properties {
+                            let sub_prop = if let Some(sub_prop) = table.properties.get(&sub_prop.id) {
+                                sub_prop
+                            } else {
+                                println!("Sub property {} not found.", sub_prop.id);
+                                continue;
+                            };
+                            args += &format!("            pub {}: Vec<{}Prop>,\n", id_to_token(&sub_prop.label).to_case(Case::Snake), id_to_token(&sub_prop.label));
+                        }
+                        args += "        }\n";
+                        args
+                    } else {
+                        format!("({});\n", id_to_token(&range.id))
+                    };
+                 
+                    prop_output += &format!("pub struct {}Prop {}\n", id_to_token(&property.label), args);
 
                 },
                 _ => {
+                    // Enum
                     let label = &property.label;
-                    prop_output += &format!("pub enum {}Range {{\n", id_to_token(label));
+                    prop_output += &format!("pub enum {}RangeProp {{\n", id_to_token(label));
                     for range in &property.range_includes {
-                        prop_output += &format!("    {}({}),\n", id_to_token(&range.id), id_to_token(&range.id));
+                        prop_output += &format!("    {}(Vec<{}>),\n", id_to_token(&range.id), id_to_token(&range.id));
                     }
                     prop_output += "}\n\n";
     
@@ -74,7 +91,7 @@ impl ToWrite {
             if PRIMITIVE_TYPES.contains(&class.label.to_lowercase().as_str()) {
                 continue;
             }
-            let mut class_outuput = String::from("#[derive(Debug, Clone)]\n");
+            let mut class_outuput = format!("/// {}\n#[derive(Debug, Clone)]\n", class.comment.replace('\n', "\n/// "));
             class_outuput += &format!("pub struct {} {{\n", id_to_token(&class.label));
             for prop in &class.properties {
                 let prop = if let Some(prop) = table.properties.get(&prop.id) {
@@ -89,19 +106,29 @@ impl ToWrite {
                     ""
                 };
                 let prop_type = id_to_token(&prop.label);
-                class_outuput += &format!("    pub {}: {}{},\n", id_to_token(&prop.label).to_case(Case::Snake), prop_type, range_suffix);
+                class_outuput += &format!("    pub {}: Vec<{}{}Prop>,\n", id_to_token(&prop.label).to_case(Case::Snake), prop_type, range_suffix);
             }
-            class_outuput += "// Sub classes\n";
-            for sub_class in &class.sub_classes {
-                let sub_class = if let Some(sub_class) = table.classes.get(&sub_class.id) {
-                    sub_class
-                } else {
-                    println!("Sub class {} not found.", sub_class.id);
-                    continue;
-                };
-                class_outuput += &format!("    pub {}: {},\n", sub_class.label.to_case(Case::Snake), sub_class.label);
-            }
+            if !class.sub_classes.is_empty() {
+                class_outuput += &format!("    pub sub_classes: Vec<{}SubClasses>,\n", id_to_token(&class.label));
+            }             
             class_outuput += "}\n\n";
+
+            // Heritance enum
+            if !class.sub_classes.is_empty() {
+                let mut herticance_enum = format!("#[derive(Debug, Clone)]\npub enum {}SubClasses {{\n", id_to_token(&class.label));
+
+                for sub_class in &class.sub_classes {
+                    let sub_class = if let Some(sub_class) = table.classes.get(&sub_class.id) {
+                        sub_class
+                    } else {
+                        println!("Sub class {} not found.", sub_class.id);
+                        continue;
+                    };
+                    herticance_enum += &format!("    {}({}),\n", id_to_token(&sub_class.label), id_to_token(&sub_class.label));
+                }
+                herticance_enum += "}\n\n";
+                class_outuput += &herticance_enum;
+            }
             classes_output += &class_outuput;
         }
 

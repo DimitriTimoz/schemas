@@ -16,9 +16,10 @@ pub struct Date(String);
 pub struct DateTime(String);
 
 #[derive(Debug, Clone)]
-pub struct URL(String);
+pub struct URL(Text);
 
 #[derive(Debug, Clone)]
 pub struct Time(String);
+
 
 include!(concat!(env!("OUT_DIR"), "/types.rs"));

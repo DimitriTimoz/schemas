@@ -191,6 +191,7 @@ pub(crate) struct PropertyDesc {
     pub(crate) comment: String, 
     pub(crate) label: String, // Nom de la propriété en camelCase pour l'argument du type
     pub(crate) range_includes: Vec<Id>, // Types qui peuvent être la valeur de cette propriété
+    pub(crate) sub_properties: Vec<Id>, // Sous propriétés
 }
 
 /*
@@ -215,10 +216,18 @@ pub(crate) struct ClassDesc {
 }
 
 #[derive(Debug)]
+pub(crate) struct SpecialTypeDesc {
+    pub(crate) label: String, // Nom de la classe en PascalCase
+    pub(crate) comment: String, 
+    pub(crate) type_of: String, //  Sous classes
+}
+
+#[derive(Debug)]
 pub(crate) struct Table {
     pub(crate) classes: HashMap<String, ClassDesc>,
     pub(crate) properties: HashMap<String, PropertyDesc>,
     pub(crate) is_domain: HashSet<String>,
+    pub(crate) special_type: HashMap<String, String>,
     pub(crate) same_name: HashMap<String, String>
 }
 
@@ -227,18 +236,23 @@ impl Table {
         let mut classes = HashMap::new();
         let mut properties = HashMap::new();
         let mut same_name = HashMap::new();
-        
+        let mut special_type = HashMap::new();
+
         let mut is_domain = HashSet::<String>::new();
 
         // Add all existing elements to the table
         for node in &schema.graph {
             let id = node.id.clone();
-            
+           
             // Class 
             let type_name = match &node.type_field {
                 Type::Type(type_name) => type_name,
                 Type::Types(types) => types.first().unwrap(),
             };
+
+            if let Some(superseded_by) = &node.schema_superseded_by {
+                same_name.insert(id.to_string(), superseded_by.id.trim_start_matches("schema:").to_string());
+            }
 
             if type_name.contains("Class") {
                 let comment = match  &node.rdfs_comment{
@@ -260,6 +274,7 @@ impl Table {
                 classes.insert(id.to_string(), class);
 
             } else if type_name.contains("Property") {
+                
                 let comment = match  &node.rdfs_comment{
                     TxtValue::Txt(comment) => comment.to_string(),
                     TxtValue::Translation{value, ..} => value.to_string(),
@@ -279,23 +294,36 @@ impl Table {
                         Vec::new()
                     }
                 };
+                
                 if range_include.len() > 1 {
                     is_domain.insert(id.clone());  
                 }
+
                 properties.insert(id.clone(), PropertyDesc {
                     id,
                     comment: comment.clone(),
                     label: label.clone(),
                     range_includes: range_include,
+                    sub_properties: Vec::new(),
                 });
+                
             } else {
                 let label = match  &node.rdfs_label{
                     TxtValue::Txt(label) => label.to_string(),
                     TxtValue::Translation{value, ..} => value.to_string(),
                 };
-                same_name.insert(label, type_name.to_string());
+                let comment = match  &node.rdfs_comment{
+                    TxtValue::Txt(comment) => comment.to_string(),
+                    TxtValue::Translation{value, ..} => value.to_string(),
+                };
+                special_type.insert(label.clone(), SpecialTypeDesc {
+                    label,
+                    comment,
+                    type_of: type_name.to_string(),
+                }.label);
                 //println!("Skipping {} of Type {}", id, type_name);
             }
+            
         }
     
         // Fill the sub classes and properties
@@ -310,7 +338,7 @@ impl Table {
 
             if type_name.contains("Class") {
                 // Get the class
-                let parents = match &node.rdfs_sub_class_of {
+                let childs = match &node.rdfs_sub_class_of {
                     Some(SubclassOf::Id(id)) => {
                         vec![id.clone()]
                     },
@@ -321,18 +349,32 @@ impl Table {
                         Vec::new()
                     }
                 };
-                // Add the sub classes to parents
-                for parent in parents {
-                    let parent = if let Some(parent) = classes.get_mut(&parent.id) {
-                        parent
-                    } else {
-                        println!("Parent {} not found for {}", parent.id, id);
-                        continue;
-                    };
-                    parent.sub_classes.push(Id { id: id.to_string() });
-                }
+                let class = if let Some(class) = classes.get_mut(&id) {
+                    class
+                } else {
+                    println!("Class {} not found.", id);
+                    continue;
+                };
+
+                class.sub_classes = childs;
+
+                // Add the sub properties to property parents
+                let childs = match &node.rdfs_sub_property_of {
+                    Some(SubPropertyOf::Id(id)) => {
+                        vec![id.clone()]
+                    },
+                    Some(SubPropertyOf::Ids(ids)) => {
+                        ids.to_vec()
+                    },
+                    None => {
+                        Vec::new()
+                    }
+                };
+                class.properties = childs;
+
             } else if type_name.contains("Property") {
-                let parents = match &node.rdfs_sub_property_of {
+                
+                let childs = match &node.rdfs_sub_property_of {
                     Some(SubPropertyOf::Id(id)) => {
                         vec![id.clone()]
                     },
@@ -344,17 +386,13 @@ impl Table {
                     }
                 };
 
-                // Add the sub classes to parents
-                for parent in parents {
-                    let parent = &parent.id;
-                    let parent = if let Some(parent) = properties.get_mut(parent) {
-                        parent
-                    } else {
-                        println!("Parent {} not found for {}", parent, id);
-                        continue;
-                    };
-                    parent.range_includes.push(Id { id: id.to_string() });
-                }
+                let property = if let Some(property) = properties.get_mut(&id) {
+                    property
+                } else {
+                    println!("Property {} not found.", id);
+                    continue;
+                };
+                property.sub_properties = childs;
 
                 // Add the properties to classes
                 let classes_with_prop = match &node.schema_domain_includes {
@@ -378,18 +416,18 @@ impl Table {
                     };
 
                     class.properties.push(Id {id: id.to_owned()});
-                  
+                    class.properties.dedup();
                 }
-
-
             } else {
-               println!("Skipping {} of Type {}", id, type_name);
+                let label = match  &node.rdfs_label{
+                    TxtValue::Txt(label) => label.to_string(),
+                    TxtValue::Translation{value, ..} => value.to_string(),
+                };
+                special_type.insert(id.to_string(), label);
             }
-
-
         }
-
-        Self { classes, properties, is_domain, same_name}
+        Self { classes, properties, is_domain, same_name, special_type
+        }
     }
 }
 
