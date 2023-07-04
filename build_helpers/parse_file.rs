@@ -1,55 +1,55 @@
-use std::{collections::HashMap, default};
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate)struct Root {
+pub(crate) struct Root {
     #[serde(rename = "@context")]
-    pub(crate)context: Context,
+    pub(crate) context: Context,
     #[serde(rename = "@graph")]
-    pub(crate)graph: Vec<Graph>,
+    pub(crate) graph: Vec<Graph>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate)struct Context {
-    pub(crate)brick: String,
-    pub(crate)csvw: String,
-    pub(crate)dc: String,
-    pub(crate)dcam: String,
-    pub(crate)dcat: String,
-    pub(crate)dcmitype: String,
-    pub(crate)dcterms: String,
-    pub(crate)doap: String,
-    pub(crate)foaf: String,
-    pub(crate)odrl: String,
-    pub(crate)org: String,
-    pub(crate)owl: String,
-    pub(crate)prof: String,
-    pub(crate)prov: String,
-    pub(crate)qb: String,
-    pub(crate)rdf: String,
-    pub(crate)rdfs: String,
-    pub(crate)schema: String,
-    pub(crate)sh: String,
-    pub(crate)skos: String,
-    pub(crate)sosa: String,
-    pub(crate)ssn: String,
-    pub(crate)time: String,
-    pub(crate)vann: String,
-    pub(crate)void: String,
-    pub(crate)xsd: String,
+pub(crate) struct Context {
+    pub(crate) brick: String,
+    pub(crate) csvw: String,
+    pub(crate) dc: String,
+    pub(crate) dcam: String,
+    pub(crate) dcat: String,
+    pub(crate) dcmitype: String,
+    pub(crate) dcterms: String,
+    pub(crate) doap: String,
+    pub(crate) foaf: String,
+    pub(crate) odrl: String,
+    pub(crate) org: String,
+    pub(crate) owl: String,
+    pub(crate) prof: String,
+    pub(crate) prov: String,
+    pub(crate) qb: String,
+    pub(crate) rdf: String,
+    pub(crate) rdfs: String,
+    pub(crate) schema: String,
+    pub(crate) sh: String,
+    pub(crate) skos: String,
+    pub(crate) sosa: String,
+    pub(crate) ssn: String,
+    pub(crate) time: String,
+    pub(crate) vann: String,
+    pub(crate) void: String,
+    pub(crate) xsd: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub(crate)struct Id {
+pub(crate) struct Id {
     #[serde(rename = "@id")]
-    pub(crate)id: String,
+    pub(crate) id: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
-pub(crate)enum RangeIncludes {
+pub(crate) enum RangeIncludes {
     Id(Id),
     Ids(Vec<Id>),
 }
@@ -57,7 +57,7 @@ pub(crate)enum RangeIncludes {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
-pub(crate)enum Type {
+pub(crate) enum Type {
     Type(String),
     Types(Vec<String>),
 }
@@ -85,90 +85,90 @@ impl Default for RangeIncludes {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate)struct Graph {
+pub(crate) struct Graph {
     #[serde(rename = "@id")]
-    pub(crate)id: String,
+    pub(crate) id: String,
     #[serde(rename = "@type")]
-    pub(crate)type_field: Type,
+    pub(crate) type_field: Type,
     #[serde(rename = "rdfs:comment")]
-    pub(crate)rdfs_comment: TxtValue,
+    pub(crate) rdfs_comment: TxtValue,
     #[serde(rename = "rdfs:label")]
-    pub(crate)rdfs_label: TxtValue,
+    pub(crate) rdfs_label: TxtValue,
     #[serde(rename = "rdfs:subPropertyOf")]
-    pub(crate)rdfs_sub_property_of: Option<SubPropertyOf>,
+    pub(crate) rdfs_sub_property_of: Option<SubPropertyOf>,
     #[serde(rename = "schema:domainIncludes")]
-    pub(crate)schema_domain_includes: Option<DomainIncludes>,
+    pub(crate) schema_domain_includes: Option<DomainIncludes>,
     #[serde(rename = "schema:rangeIncludes")]
-    pub(crate)schema_range_includes: Option<RangeIncludes>,
+    pub(crate) schema_range_includes: Option<RangeIncludes>,
     #[serde(rename = "schema:isPartOf")]
-    pub(crate)schema_is_part_of: Option<SchemaIsPartOf>,
+    pub(crate) schema_is_part_of: Option<SchemaIsPartOf>,
     #[serde(rename = "rdfs:subClassOf")]
-    pub(crate)rdfs_sub_class_of: Option<SubclassOf>,
+    pub(crate) rdfs_sub_class_of: Option<SubclassOf>,
     #[serde(rename = "schema:contributor")]
-    pub(crate)schema_contributor: Option<Contributor>,
+    pub(crate) schema_contributor: Option<Contributor>,
     #[serde(rename = "schema:source")]
-    pub(crate)schema_source: Option<Source>,
+    pub(crate) schema_source: Option<Source>,
     #[serde(rename = "owl:equivalentClass")]
-    pub(crate)owl_equivalent_class: Option<EquivalentClass>,
+    pub(crate) owl_equivalent_class: Option<EquivalentClass>,
     #[serde(rename = "schema:supersededBy")]
-    pub(crate)schema_superseded_by: Option<SchemaSupersededBy>,
+    pub(crate) schema_superseded_by: Option<SchemaSupersededBy>,
     #[serde(rename = "owl:equivalentProperty")]
-    pub(crate)owl_equivalent_property: Option<OwlEquivalentProperty>,
+    pub(crate) owl_equivalent_property: Option<OwlEquivalentProperty>,
     #[serde(rename = "skos:exactMatch")]
-    pub(crate)skos_exact_match: Option<SkosExactMatch>,
+    pub(crate) skos_exact_match: Option<SkosExactMatch>,
     #[serde(rename = "schema:inverseOf")]
-    pub(crate)schema_inverse_of: Option<SchemaInverseOf>,
+    pub(crate) schema_inverse_of: Option<SchemaInverseOf>,
     #[serde(rename = "schema:sameAs")]
-    pub(crate)schema_same_as: Option<SchemaSameAs>,
+    pub(crate) schema_same_as: Option<SchemaSameAs>,
     #[serde(rename = "skos:closeMatch")]
-    pub(crate)skos_close_match: Option<CloseMatch>,
+    pub(crate) skos_close_match: Option<CloseMatch>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate)struct SchemaIsPartOf {
+pub(crate) struct SchemaIsPartOf {
     #[serde(rename = "@id")]
-    pub(crate)id: String,
+    pub(crate) id: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate)struct SchemaSupersededBy {
+pub(crate) struct SchemaSupersededBy {
     #[serde(rename = "@id")]
-    pub(crate)id: String,
+    pub(crate) id: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate)struct OwlEquivalentProperty {
+pub(crate) struct OwlEquivalentProperty {
     #[serde(rename = "@id")]
-    pub(crate)id: String,
+    pub(crate) id: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate)struct SkosExactMatch {
-    #[serde(rename = "@id")]
-    pub(crate)id: String,
+pub(crate) struct SkosExactMatch {
+    #[serde(rename = "@id")] 
+    pub(crate) id: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate)struct SchemaInverseOf {
+pub(crate) struct SchemaInverseOf {
     #[serde(rename = "@id")]
-    pub(crate)id: String,
+    pub(crate) id: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate)struct SchemaSameAs {
+pub(crate) struct SchemaSameAs {
     #[serde(rename = "@id")]
-    pub(crate)id: String,
+    pub(crate) id: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
-pub(crate)enum TxtValue {
+pub(crate) enum TxtValue {
     Txt(String),
     Translation{
         #[serde(rename = "@language")]
@@ -211,23 +211,28 @@ pub(crate) struct ClassDesc {
     pub(crate) label: String, // Nom de la classe en PascalCase
     pub(crate) comment: String, 
     pub(crate) sub_classes: Vec<Id>, //  Sous classes
-    pub(crate) properties: Vec<PropertyDesc>, // Propriétés de la classe uniquement
+    pub(crate) properties: Vec<Id>, // Propriétés de la classe uniquement
 }
 
 #[derive(Debug)]
-pub(crate)struct Table {
-    pub(crate)classes: HashMap<String, ClassDesc>,
-    pub(crate)properties: HashMap<String, PropertyDesc>,
+pub(crate) struct Table {
+    pub(crate) classes: HashMap<String, ClassDesc>,
+    pub(crate) properties: HashMap<String, PropertyDesc>,
+    pub(crate) is_domain: HashSet<String>,
+    pub(crate) same_name: HashMap<String, String>
 }
 
 impl Table {
     pub(crate)fn from(schema: &Root) -> Table {
         let mut classes = HashMap::new();
         let mut properties = HashMap::new();
+        let mut same_name = HashMap::new();
+        
+        let mut is_domain = HashSet::<String>::new();
 
         // Add all existing elements to the table
         for node in &schema.graph {
-            let id = node.id.trim_start_matches("schema:");
+            let id = node.id.clone();
             
             // Class 
             let type_name = match &node.type_field {
@@ -274,21 +279,28 @@ impl Table {
                         Vec::new()
                     }
                 };
-
-                properties.insert(id.to_string(), PropertyDesc {
-                    id: id.to_string(),
+                if range_include.len() > 1 {
+                    is_domain.insert(id.clone());  
+                }
+                properties.insert(id.clone(), PropertyDesc {
+                    id,
                     comment: comment.clone(),
                     label: label.clone(),
                     range_includes: range_include,
                 });
             } else {
+                let label = match  &node.rdfs_label{
+                    TxtValue::Txt(label) => label.to_string(),
+                    TxtValue::Translation{value, ..} => value.to_string(),
+                };
+                same_name.insert(label, type_name.to_string());
                 //println!("Skipping {} of Type {}", id, type_name);
             }
         }
     
         // Fill the sub classes and properties
         for node in &schema.graph {
-            let id = node.id.trim_start_matches("schema:");
+            let id = node.id.clone();
             
             // Class 
             let type_name = match &node.type_field {
@@ -311,17 +323,15 @@ impl Table {
                 };
                 // Add the sub classes to parents
                 for parent in parents {
-                    let parent = parent.id.trim_start_matches("schema:");
-                    let parent = if let Some(parent) = classes.get_mut(parent) {
+                    let parent = if let Some(parent) = classes.get_mut(&parent.id) {
                         parent
                     } else {
-                        println!("Parent {} not found for {}", parent, id);
+                        println!("Parent {} not found for {}", parent.id, id);
                         continue;
                     };
                     parent.sub_classes.push(Id { id: id.to_string() });
                 }
             } else if type_name.contains("Property") {
-                let id = node.id.trim_start_matches("schema:");
                 let parents = match &node.rdfs_sub_property_of {
                     Some(SubPropertyOf::Id(id)) => {
                         vec![id.clone()]
@@ -336,7 +346,7 @@ impl Table {
 
                 // Add the sub classes to parents
                 for parent in parents {
-                    let parent = parent.id.trim_start_matches("schema:");
+                    let parent = &parent.id;
                     let parent = if let Some(parent) = properties.get_mut(parent) {
                         parent
                     } else {
@@ -346,15 +356,40 @@ impl Table {
                     parent.range_includes.push(Id { id: id.to_string() });
                 }
 
+                // Add the properties to classes
+                let classes_with_prop = match &node.schema_domain_includes {
+                    Some(DomainIncludes::Id(id)) => {
+                        vec![id.clone()]
+                    },
+                    Some(DomainIncludes::Ids(ids)) => {
+                        ids.to_vec()
+                    },
+                    None => {
+                        Vec::new()
+                    }
+                };
+                
+                for class in &classes_with_prop {
+                    let class = if let Some(class) = classes.get_mut(&class.id) {
+                        class
+                    } else {
+                        println!("Class {:?} not found for {}", class, id);
+                        continue;
+                    };
+
+                    class.properties.push(Id {id: id.to_owned()});
+                  
+                }
+
 
             } else {
-               // println!("Skipping {} of Type {}", id, type_name);
+               println!("Skipping {} of Type {}", id, type_name);
             }
 
 
         }
 
-        Self { classes, properties}
+        Self { classes, properties, is_domain, same_name}
     }
 }
 

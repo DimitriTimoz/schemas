@@ -2,13 +2,10 @@ use std::collections::HashSet;
 
 use convert_case::{Casing, Case};
 
-use super::parse_file::{Root, Graph, RangeIncludes, Table};
+use super::parse_file::{Table};
 
 
 pub struct ToWrite {
-    table: Table,
-    is_domain: HashSet<String>,
-    is_defined: HashSet<String>,
 }
 
 const TO_REPLACE: [[&str; 2]; 5] = [["Result", "ResultType"], ["Abstract", "AbstractType"], ["Box", "BoxType"], ["Yield", "YieldType"], ["Option", "OptionType"]];
@@ -43,30 +40,83 @@ impl ToWrite {
 
     pub(crate) fn write_files(table: &Table) -> (String, String) {
         let mut props_output = String::new();
-        let mut class_output = String::new();
+        let mut classes_output = String::new();
 
         // properties.rs
         for property in table.properties.values() {
             let mut prop_output = String::from("#[derive(Debug, Clone)]\n");
-            if property.range_includes.len() > 1 {
-                // Enum 
-                prop_output += &format!("pub enum {}Range {{\n", id_to_token(&property.id));
-                for range in &property.range_includes {
-                    prop_output += &format!("    {}({}),\n", id_to_token(&range.id), id_to_token(&range.id));
+            match property.range_includes.len() {
+                0 => {
+                    println!("Property {} has no range includes.", property.id);
+                    continue;
+                },
+                1 => {
+                    // Struct
+                    let range = property.range_includes.first().expect("Range includes should have at least one element.");
+                    prop_output += &format!("pub struct {}({});\n", id_to_token(&property.label), id_to_token(&range.id));
+
+                },
+                _ => {
+                    let label = &property.label;
+                    prop_output += &format!("pub enum {}Range {{\n", id_to_token(label));
+                    for range in &property.range_includes {
+                        prop_output += &format!("    {}({}),\n", id_to_token(&range.id), id_to_token(&range.id));
+                    }
+                    prop_output += "}\n\n";
+    
                 }
-                prop_output += "}\n\n";
-            } else if property.range_includes.len() == 1 {
-                // Struct
-                let range = property.range_includes.first().expect("Range includes should have at least one element.");
-                prop_output += &format!("pub struct {}Range({});\n", id_to_token(&property.id), id_to_token(&range.id));
-            } else {
-                println!("Property {} has no range includes.", property.id);
-                continue;
             }
             props_output += &prop_output;
         }
 
-        (props_output, class_output)
+        // types.rs
+        for class in table.classes.values() {
+            if PRIMITIVE_TYPES.contains(&class.label.to_lowercase().as_str()) {
+                continue;
+            }
+            let mut class_outuput = String::from("#[derive(Debug, Clone)]\n");
+            class_outuput += &format!("pub struct {} {{\n", id_to_token(&class.label));
+            for prop in &class.properties {
+                let prop = if let Some(prop) = table.properties.get(&prop.id) {
+                    prop
+                } else {
+                    println!("Property {} not found.", prop.id);
+                    continue;
+                };
+                let range_suffix = if table.is_domain.contains(prop.id.as_str()) {
+                    "Range"
+                } else {
+                    ""
+                };
+                let prop_type = id_to_token(&prop.label);
+                class_outuput += &format!("    pub {}: {}{},\n", id_to_token(&prop.label).to_case(Case::Snake), prop_type, range_suffix);
+            }
+            class_outuput += "// Sub classes\n";
+            for sub_class in &class.sub_classes {
+                let sub_class = if let Some(sub_class) = table.classes.get(&sub_class.id) {
+                    sub_class
+                } else {
+                    println!("Sub class {} not found.", sub_class.id);
+                    continue;
+                };
+                class_outuput += &format!("    pub {}: {},\n", sub_class.label.to_case(Case::Snake), sub_class.label);
+            }
+            class_outuput += "}\n\n";
+            classes_output += &class_outuput;
+        }
+
+        for (label, id) in &table.same_name {
+            let class = if let Some(class) = table.classes.get(id) {
+                class
+            } else {
+                println!("Class {} not found.", id);
+                continue;
+            };
+
+            classes_output += &format!("pub type {} = {};\n\n", label, &class.label);
+
+        }
+        (props_output, classes_output)
     }
 
 }
