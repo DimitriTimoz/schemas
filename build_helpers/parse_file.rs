@@ -54,7 +54,6 @@ pub(crate) enum RangeIncludes {
     Ids(Vec<Id>),
 }
 
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub(crate) enum Type {
@@ -148,7 +147,7 @@ pub(crate) struct OwlEquivalentProperty {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SkosExactMatch {
-    #[serde(rename = "@id")] 
+    #[serde(rename = "@id")]
     pub(crate) id: String,
 }
 
@@ -170,12 +169,12 @@ pub(crate) struct SchemaSameAs {
 #[serde(untagged)]
 pub(crate) enum TxtValue {
     Txt(String),
-    Translation{
+    Translation {
         #[serde(rename = "@language")]
         language: String,
         #[serde(rename = "@value")]
         value: String,
-    }
+    },
 }
 
 impl Default for TxtValue {
@@ -184,41 +183,40 @@ impl Default for TxtValue {
     }
 }
 
-
 #[derive(Debug)]
 pub(crate) struct PropertyDesc {
     pub(crate) id: String,
-    pub(crate) comment: String, 
+    pub(crate) comment: String,
     pub(crate) label: String, // Nom de la propriété en camelCase pour l'argument du type
     pub(crate) range_includes: Vec<Id>, // Types qui peuvent être la valeur de cette propriété
     pub(crate) sub_properties: Vec<Id>, // Sous propriétés
 }
 
 /*
-    Subclass signifie que la classe hérite de la classe parente
-    Domain include est la liste des types disposant de cette propriété
-    Range include est la liste des types pouvant être la valeur de cette propriété
-    pour comprendre https://schema.org/SearchAction
-    Exemple :
-    SearchAction est une sous classe de Action
-    Elle dispose donc de toutes les propriétés de Action
-    Elle dispose de la propriété query qui lui est propre en plus des propriétés de Action
-    
+   Subclass signifie que la classe hérite de la classe parente
+   Domain include est la liste des types disposant de cette propriété
+   Range include est la liste des types pouvant être la valeur de cette propriété
+   pour comprendre https://schema.org/SearchAction
+   Exemple :
+   SearchAction est une sous classe de Action
+   Elle dispose donc de toutes les propriétés de Action
+   Elle dispose de la propriété query qui lui est propre en plus des propriétés de Action
 
- */
+
+*/
 
 #[derive(Debug)]
 pub(crate) struct ClassDesc {
     pub(crate) label: String, // Nom de la classe en PascalCase
-    pub(crate) comment: String, 
+    pub(crate) comment: String,
     pub(crate) sub_classes: Vec<Id>, //  Sous classes
-    pub(crate) properties: Vec<Id>, // Propriétés de la classe uniquement
+    pub(crate) properties: Vec<Id>,  // Propriétés de la classe uniquement
 }
 
 #[derive(Debug)]
 pub(crate) struct SpecialTypeDesc {
     pub(crate) label: String, // Nom de la classe en PascalCase
-    pub(crate) comment: String, 
+    pub(crate) comment: String,
     pub(crate) type_of: String, //  Sous classes
 }
 
@@ -228,11 +226,11 @@ pub(crate) struct Table {
     pub(crate) properties: HashMap<String, PropertyDesc>,
     pub(crate) is_domain: HashSet<String>,
     pub(crate) special_type: HashMap<String, String>,
-    pub(crate) same_name: HashMap<String, String>
+    pub(crate) same_name: HashMap<String, String>,
 }
 
 impl Table {
-    pub(crate)fn from(schema: &Root) -> Table {
+    pub(crate) fn from(schema: &Root) -> Table {
         let mut classes = HashMap::new();
         let mut properties = HashMap::new();
         let mut same_name = HashMap::new();
@@ -243,26 +241,29 @@ impl Table {
         // Add all existing elements to the table
         for node in &schema.graph {
             let id = node.id.clone();
-           
-            // Class 
+
+            // Class
             let type_name = match &node.type_field {
                 Type::Type(type_name) => type_name,
                 Type::Types(types) => types.first().unwrap(),
             };
 
             if let Some(superseded_by) = &node.schema_superseded_by {
-                same_name.insert(id.to_string(), superseded_by.id.trim_start_matches("schema:").to_string());
+                same_name.insert(
+                    id.to_string(),
+                    superseded_by.id.trim_start_matches("schema:").to_string(),
+                );
             }
 
             if type_name.contains("Class") {
-                let comment = match  &node.rdfs_comment{
+                let comment = match &node.rdfs_comment {
                     TxtValue::Txt(comment) => comment.to_string(),
-                    TxtValue::Translation{value, ..} => value.to_string(),
+                    TxtValue::Translation { value, .. } => value.to_string(),
                 };
 
-                let label = match  &node.rdfs_label{
+                let label = match &node.rdfs_label {
                     TxtValue::Txt(label) => label.to_string(),
-                    TxtValue::Translation{value, ..} => value.to_string(),
+                    TxtValue::Translation { value, .. } => value.to_string(),
                 };
 
                 let class = ClassDesc {
@@ -272,65 +273,64 @@ impl Table {
                     properties: Vec::new(),
                 };
                 classes.insert(id.to_string(), class);
-
             } else if type_name.contains("Property") {
-                
-                let comment = match  &node.rdfs_comment{
+                let comment = match &node.rdfs_comment {
                     TxtValue::Txt(comment) => comment.to_string(),
-                    TxtValue::Translation{value, ..} => value.to_string(),
+                    TxtValue::Translation { value, .. } => value.to_string(),
                 };
-                let label = match  &node.rdfs_label{
+                let label = match &node.rdfs_label {
                     TxtValue::Txt(label) => label.to_string(),
-                    TxtValue::Translation{value, ..} => value.to_string(),
+                    TxtValue::Translation { value, .. } => value.to_string(),
                 };
                 let range_include = match &node.schema_range_includes {
                     Some(RangeIncludes::Id(id)) => {
                         vec![id.clone()]
-                    },
-                    Some(RangeIncludes::Ids(ids)) => {
-                        ids.to_vec()
-                    },
-                    None => {
-                        Vec::new()
                     }
+                    Some(RangeIncludes::Ids(ids)) => ids.to_vec(),
+                    None => Vec::new(),
                 };
-                
+
                 if range_include.len() > 1 {
-                    is_domain.insert(id.clone());  
+                    is_domain.insert(id.clone());
                 }
 
-                properties.insert(id.clone(), PropertyDesc {
-                    id,
-                    comment: comment.clone(),
-                    label: label.clone(),
-                    range_includes: range_include,
-                    sub_properties: Vec::new(),
-                });
-                
+                properties.insert(
+                    id.clone(),
+                    PropertyDesc {
+                        id,
+                        comment: comment.clone(),
+                        label: label.clone(),
+                        range_includes: range_include,
+                        sub_properties: Vec::new(),
+                    },
+                );
             } else {
-                let label = match  &node.rdfs_label{
+                let label = match &node.rdfs_label {
                     TxtValue::Txt(label) => label.to_string(),
-                    TxtValue::Translation{value, ..} => value.to_string(),
+                    TxtValue::Translation { value, .. } => value.to_string(),
                 };
-                let comment = match  &node.rdfs_comment{
+                let comment = match &node.rdfs_comment {
                     TxtValue::Txt(comment) => comment.to_string(),
-                    TxtValue::Translation{value, ..} => value.to_string(),
+                    TxtValue::Translation { value, .. } => value.to_string(),
                 };
-                special_type.insert(label.clone(), SpecialTypeDesc {
-                    label,
-                    comment,
-                    type_of: type_name.to_string(),
-                }.label);
+                special_type.insert(
+                    label.clone(),
+                    SpecialTypeDesc {
+                        label,
+                        comment,
+                        type_of: type_name.to_string(),
+                    }
+                    .label,
+                );
                 //println!("Skipping {} of Type {}", id, type_name);
             }
-            
         }
-    
+
         // Fill the sub classes and properties
         for node in &schema.graph {
             let id = node.id.clone();
-            
-            // Class 
+
+            // Class
             let type_name = match &node.type_field {
                 Type::Type(type_name) => type_name,
                 Type::Types(types) => types.first().unwrap(),
@@ -341,13 +341,9 @@ impl Table {
                 let childs = match &node.rdfs_sub_class_of {
                     Some(SubclassOf::Id(id)) => {
                         vec![id.clone()]
-                    },
-                    Some(SubclassOf::Ids(ids)) => {
-                        ids.to_vec()
-                    },
-                    None => {
-                        Vec::new()
                     }
+                    Some(SubclassOf::Ids(ids)) => ids.to_vec(),
+                    None => Vec::new(),
                 };
                 let class = if let Some(class) = classes.get_mut(&id) {
                     class
@@ -362,28 +358,18 @@ impl Table {
                 let childs = match &node.rdfs_sub_property_of {
                     Some(SubPropertyOf::Id(id)) => {
                         vec![id.clone()]
-                    },
-                    Some(SubPropertyOf::Ids(ids)) => {
-                        ids.to_vec()
-                    },
-                    None => {
-                        Vec::new()
                     }
+                    Some(SubPropertyOf::Ids(ids)) => ids.to_vec(),
+                    None => Vec::new(),
                 };
                 class.properties = childs;
-
             } else if type_name.contains("Property") {
-                
                 let childs = match &node.rdfs_sub_property_of {
                     Some(SubPropertyOf::Id(id)) => {
                         vec![id.clone()]
-                    },
-                    Some(SubPropertyOf::Ids(ids)) => {
-                        ids.to_vec()
-                    },
-                    None => {
-                        Vec::new()
                     }
+                    Some(SubPropertyOf::Ids(ids)) => ids.to_vec(),
+                    None => Vec::new(),
                 };
 
                 let property = if let Some(property) = properties.get_mut(&id) {
@@ -398,15 +384,11 @@ impl Table {
                 let classes_with_prop = match &node.schema_domain_includes {
                     Some(DomainIncludes::Id(id)) => {
                         vec![id.clone()]
-                    },
-                    Some(DomainIncludes::Ids(ids)) => {
-                        ids.to_vec()
-                    },
-                    None => {
-                        Vec::new()
                     }
+                    Some(DomainIncludes::Ids(ids)) => ids.to_vec(),
+                    None => Vec::new(),
                 };
-                
+
                 for class in &classes_with_prop {
                     let class = if let Some(class) = classes.get_mut(&class.id) {
                         class
@@ -415,28 +397,30 @@ impl Table {
                         continue;
                     };
 
-                    class.properties.push(Id {id: id.to_owned()});
+                    class.properties.push(Id { id: id.to_owned() });
                     class.properties.dedup();
                 }
             } else {
-                let label = match  &node.rdfs_label{
+                let label = match &node.rdfs_label {
                     TxtValue::Txt(label) => label.to_string(),
-                    TxtValue::Translation{value, ..} => value.to_string(),
+                    TxtValue::Translation { value, .. } => value.to_string(),
                 };
                 special_type.insert(id.to_string(), label);
             }
         }
-        Self { classes, properties, is_domain, same_name, special_type
+        Self {
+            classes,
+            properties,
+            is_domain,
+            same_name,
+            special_type,
         }
     }
 }
 
-
-
-
-pub(crate)fn read_schema() -> Table {
+pub(crate) fn read_schema() -> Table {
     let file = std::fs::File::open("schemaorg.jsonld").unwrap();
     let reader = std::io::BufReader::new(file);
     let root: Root = serde_json::from_reader(reader).unwrap();
-    Table::from(&root)    
+    Table::from(&root)
 }
