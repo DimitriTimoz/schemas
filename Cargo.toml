@@ -1,5 +1,5 @@
 [package]
-name = "schema-org"
+name = "schema-rs"
 version = "0.1.1"
 edition = "2021"
 authors = ["Timoz Dimitri <dimitri.timoz@protonmail.com>"]
