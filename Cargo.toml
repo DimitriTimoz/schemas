@@ -1,11 +1,11 @@
 [package]
-name = "schema-rs"
+name = "schemas"
 version = "0.1.1"
 edition = "2021"
 authors = ["Timoz Dimitri <dimitri.timoz@protonmail.com>"]
 description = "A Rust library for working with Schema.org data"
 license = "MIT"
-repository = "https://github.com/DimitriTimoz/schema-rs"
+repository = "https://github.com/DimitriTimoz/schemas"
 readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [build-dependencies]
