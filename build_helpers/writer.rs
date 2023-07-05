@@ -115,13 +115,25 @@ impl ToWrite {
                 let prop_type = id_to_token(&prop.label);
                 class_outuput += &format!("    pub {}: Vec<{}{}Prop>,\n", id_to_token(&prop.label).to_case(Case::Snake), prop_type, range_suffix);
             }
-            if !class.sub_classes.is_empty() {
-                class_outuput += &format!("    pub sub_classes: Vec<{}SubClasses>,\n", id_to_token(&class.label));
-            }             
+            match class.sub_classes.len() {
+                1 => {
+                    let sub_class = if let Some(sub_class) = table.classes.get(&class.sub_classes[0].id) {
+                        sub_class
+                    } else {
+                        println!("Sub class {} not found.", class.sub_classes[0].id);
+                        continue;
+                    };
+                    class_outuput += &format!("    pub sub_class: {},\n", id_to_token(&sub_class.label));
+                },
+                0 => {},
+                _ => {
+                    class_outuput += &format!("    pub sub_classes: {}SubClasses,\n", id_to_token(&class.label));
+                }
+            } 
             class_outuput += "}\n\n";
 
             // Heritance enum
-            if !class.sub_classes.is_empty() {
+            if class.sub_classes.len() > 1 {
                 let mut herticance_enum = format!("#[derive(Debug, Clone)]\npub enum {}SubClasses {{\n", id_to_token(&class.label));
 
                 for sub_class in &class.sub_classes {

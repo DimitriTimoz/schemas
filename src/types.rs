@@ -7,6 +7,9 @@ pub struct Text(String);
 pub struct Number(f64);
 
 #[derive(Debug, Clone)]
+pub struct Integer(i64);
+
+#[derive(Debug, Clone)]
 pub struct Boolean(bool);
 
 #[derive(Debug, Clone)]
@@ -21,5 +24,14 @@ pub struct URL(Text);
 #[derive(Debug, Clone)]
 pub struct Time(String);
 
+#[derive(Debug, Clone)]
+pub struct XPathType {
+    sub_class: Text,
+}
+
+#[derive(Debug, Clone)]
+pub struct CssSelectorType {
+    sub_class: Text,
+}
 
 include!(concat!(env!("OUT_DIR"), "/types.rs"));
