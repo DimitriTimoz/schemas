@@ -2,7 +2,11 @@
 name = "schema-org"
 version = "0.1.0"
 edition = "2021"
-
+authors = ["Timoz Dimitr <dimitri.timoz@protonmail.com>"]
+description = "A Rust library for working with Schema.org data"
+license = "MIT"
+repository = "https://github.com/DimitriTimoz/schema-org"
+readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }
