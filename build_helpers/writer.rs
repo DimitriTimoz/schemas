@@ -43,7 +43,7 @@ impl ToWrite {
         // properties.rs
         for property in table.properties.values() {
             let mut prop_output = format!("/// {}\n#[derive(Debug, Clone)]\n", property.comment.replace('\n', "\n/// "));
-
+          
             match property.range_includes.len() {
                 0 => {
                     println!("Property {} has no range inclDudes.", property.id);
@@ -61,7 +61,12 @@ impl ToWrite {
                                 println!("Sub property {} not found.", sub_prop.id);
                                 continue;
                             };
-                            args += &format!("            pub {}: Vec<{}Prop>,\n", id_to_token(&sub_prop.label).to_case(Case::Snake), id_to_token(&sub_prop.label));
+                            let range = if sub_prop.range_includes.len() > 1 {
+                                "Range"
+                            } else {
+                                ""
+                            };
+                            args += &format!("            pub {}: Vec<{}{}Prop>,\n", id_to_token(&sub_prop.label).to_case(Case::Snake), id_to_token(&sub_prop.label), range);
                         }
                         args += "        }\n";
                         args
@@ -84,6 +89,7 @@ impl ToWrite {
                 }
             }
             props_output += &prop_output;
+
         }
 
         // types.rs
@@ -100,7 +106,8 @@ impl ToWrite {
                     println!("Property {} not found.", prop.id);
                     continue;
                 };
-                let range_suffix = if table.is_domain.contains(prop.id.as_str()) {
+                
+                let range_suffix = if prop.range_includes.len() > 1 {
                     "Range"
                 } else {
                     ""
