@@ -71,7 +71,7 @@ impl ToWrite {
                         args += "}\n";
                         args
                     } else {
-                        format!("({});\n", id_to_token(&range.id))
+                        format!("(pub {});\n", id_to_token(&range.id))
                     };
                  
                     prop_output += &format!("pub struct {}Prop {}\n", id_to_token(&property.label), args);
