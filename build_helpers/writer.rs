@@ -66,9 +66,9 @@ impl ToWrite {
                             } else {
                                 ""
                             };
-                            args += &format!("            pub {}: Vec<{}{}Prop>,\n", id_to_token(&sub_prop.label).to_case(Case::Snake), id_to_token(&sub_prop.label), range);
+                            args += &format!("  pub {}: Vec<{}{}Prop>,\n", id_to_token(&sub_prop.label).to_case(Case::Snake), id_to_token(&sub_prop.label), range);
                         }
-                        args += "        }\n";
+                        args += "}\n";
                         args
                     } else {
                         format!("({});\n", id_to_token(&range.id))
@@ -85,14 +85,14 @@ impl ToWrite {
                         prop_output += &format!("    {}(Vec<{}>),\n", id_to_token(&range.id), id_to_token(&range.id));
                     }
                     prop_output += "}\n\n";
-    
                 }
             }
             props_output += &prop_output;
-
+            
         }
 
         // types.rs
+        let mut types_variations = String::new();
         for class in table.classes.values() {
             if PRIMITIVE_TYPES.contains(&class.label.to_lowercase().as_str()) {
                 continue;
@@ -127,7 +127,7 @@ impl ToWrite {
                 },
                 0 => {},
                 _ => {
-                    class_outuput += &format!("    pub sub_classes: {}SubClasses,\n", id_to_token(&class.label));
+                    class_outuput += &format!("    pub sub_classes: [{}SubClasses; {}],\n", id_to_token(&class.label), class.sub_classes.len());
                 }
             } 
             class_outuput += "}\n\n";
@@ -148,6 +148,7 @@ impl ToWrite {
                 herticance_enum += "}\n\n";
                 class_outuput += &herticance_enum;
             }
+            types_variations += &format!("   {}({}),\n", &id_to_token(&class.label), id_to_token(&class.label));
             classes_output += &class_outuput;
         }
 
@@ -160,8 +161,10 @@ impl ToWrite {
             };
 
             classes_output += &format!("pub type {} = {};\n\n", label, &class.label);
-
         }
+
+        classes_output += &format!("pub enum Types {{\n{}\n}}\n\n", types_variations);
+
         (props_output, classes_output)
     }
 
