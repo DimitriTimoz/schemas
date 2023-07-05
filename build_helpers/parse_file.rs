@@ -187,45 +187,32 @@ impl Default for TxtValue {
 pub(crate) struct PropertyDesc {
     pub(crate) id: String,
     pub(crate) comment: String,
-    pub(crate) label: String, // Nom de la propriété en camelCase pour l'argument du type
-    pub(crate) range_includes: Vec<Id>, // Types qui peuvent être la valeur de cette propriété
+    pub(crate) label: String, // Name of the property camelCase for the type argument
+    pub(crate) range_includes: Vec<Id>, // Range of the property
     pub(crate) sub_properties: Vec<Id>, // Sous propriétés
 }
 
-/*
-   Subclass signifie que la classe hérite de la classe parente
-   Domain include est la liste des types disposant de cette propriété
-   Range include est la liste des types pouvant être la valeur de cette propriété
-   pour comprendre https://schema.org/SearchAction
-   Exemple :
-   SearchAction est une sous classe de Action
-   Elle dispose donc de toutes les propriétés de Action
-   Elle dispose de la propriété query qui lui est propre en plus des propriétés de Action
 
-
-*/
 
 #[derive(Debug)]
 pub(crate) struct ClassDesc {
-    pub(crate) label: String, // Nom de la classe en PascalCase
+    pub(crate) label: String, // Name of the class PascalCase
     pub(crate) comment: String,
-    pub(crate) sub_classes: Vec<Id>, //  Sous classes
-    pub(crate) properties: Vec<Id>,  // Propriétés de la classe uniquement
+    pub(crate) sub_classes: Vec<Id>, 
+    pub(crate) properties: Vec<Id>,  // Properties of the class
 }
 
 #[derive(Debug)]
 pub(crate) struct SpecialTypeDesc {
-    pub(crate) label: String, // Nom de la classe en PascalCase
+    pub(crate) label: String, // Name of the class PascalCase
     pub(crate) comment: String,
-    pub(crate) type_of: String, //  Sous classes
+    pub(crate) type_of: String, //  Sub classes
 }
 
 #[derive(Debug)]
 pub(crate) struct Table {
     pub(crate) classes: HashMap<String, ClassDesc>,
     pub(crate) properties: HashMap<String, PropertyDesc>,
-    pub(crate) is_domain: HashSet<String>,
-    pub(crate) special_type: HashMap<String, String>,
     pub(crate) same_name: HashMap<String, String>,
 }
 
@@ -241,8 +228,7 @@ impl Table {
         // Add all existing elements to the table
         for node in &schema.graph {
             let id = node.id.clone();
-
-            // Class
+            // Get common values
             let type_name = match &node.type_field {
                 Type::Type(type_name) => type_name,
                 Type::Types(types) => types.first().unwrap(),
@@ -290,6 +276,7 @@ impl Table {
                     None => Vec::new(),
                 };
 
+                // To know if an enum is required
                 if range_include.len() > 1 {
                     is_domain.insert(id.clone());
                 }
@@ -322,7 +309,6 @@ impl Table {
                     }
                     .label,
                 );
-                //println!("Skipping {} of Type {}", id, type_name);
             }
         }
 
@@ -411,9 +397,7 @@ impl Table {
         Self {
             classes,
             properties,
-            is_domain,
             same_name,
-            special_type,
         }
     }
 }
