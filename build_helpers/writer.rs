@@ -57,9 +57,15 @@ fn id_to_token(id: &str) -> String {
 impl ToWrite {
 
     fn header_with_doc(doc: &str) -> String {
+        let mut to_derive = vec!["Debug", "Clone"];
+        if cfg!(feature = "serde") {
+            to_derive.push("Serialize");
+            to_derive.push("Deserialize");
+        }
         format!(
-            "/// {}\n#[derive(Debug, Clone)]\n",
-            doc.replace('\n', "\n/// ")
+            "/// {}\n#[derive({})]\n",
+            doc.replace('\n', "\n/// "),
+            to_derive.join(", ")
         )
     }
 
