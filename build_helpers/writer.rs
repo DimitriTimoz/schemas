@@ -93,7 +93,9 @@ impl ToWrite {
                     // Struct
                     let range = property
                         .range_includes
-                        .first()
+                        .clone()
+                        .drain()
+                        .next()
                         .expect("Range includes should have at least one element.");
                     let args = if !property.sub_properties.is_empty() {
                         let mut args = String::from("{\n");
@@ -193,11 +195,12 @@ impl {}Prop {{
             }
             match class.sub_classes.len() {
                 1 => {
+                    let sub_class_id = class.sub_classes.clone().drain().next().unwrap().id;
                     let sub_class =
-                        if let Some(sub_class) = table.classes.get(&class.sub_classes[0].id) {
+                        if let Some(sub_class) = table.classes.get(&sub_class_id) {
                             sub_class
                         } else {
-                            println!("Sub class {} not found.", class.sub_classes[0].id);
+                            println!("Sub class {sub_class_id} not found.");
                             continue;
                         };
                     class_outuput +=
