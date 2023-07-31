@@ -216,8 +216,14 @@ impl {}Prop {{
 
             // Heritance enum
             if class.sub_classes.len() > 1 {
+                let mut to_derive = vec!["Debug", "Clone"];
+                if cfg!(feature = "serde") {
+                    to_derive.push("Serialize");
+                    to_derive.push("Deserialize");
+                }
                 let mut herticance_enum = format!(
-                    "#[derive(Debug, Clone)]\npub enum {}SubClasses {{\n",
+                    "#[derive({})]\npub enum {}SubClasses {{\n",
+                    to_derive.join(", "),
                     id_to_token(&class.label)
                 );
 
@@ -258,7 +264,12 @@ impl {}Prop {{
             classes_output += &format!("pub type {} = {};\n\n", label, &class.label);
         }
 
-        classes_output += &format!("pub enum Types {{\n{}\n}}\n\n", types_variations);
+        let mut to_derive = vec!["Debug", "Clone"];
+        if cfg!(feature = "serde") {
+            to_derive.push("Serialize");
+            to_derive.push("Deserialize");
+        }
+        classes_output += &format!("#[derive({})]\npub enum Types {{\n{}\n}}\n\n", to_derive.join(", "), types_variations);
 
         (props_output, classes_output, )
     }
