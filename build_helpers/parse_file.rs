@@ -338,7 +338,7 @@ impl Table {
                     continue;
                 };
 
-                class.sub_classes = childs.into_iter().collect();
+                class.sub_classes.extend(childs.into_iter());
 
                 // Add the sub properties to property parents
                 let childs = match &node.rdfs_sub_property_of {
@@ -348,7 +348,7 @@ impl Table {
                     Some(SubPropertyOf::Ids(ids)) => ids.to_vec(),
                     None => Vec::new(),
                 };
-                class.properties = childs.into_iter().collect();
+                class.properties.extend(childs.into_iter());
             } else if type_name.contains("Property") {
                 let childs = match &node.rdfs_sub_property_of {
                     Some(SubPropertyOf::Id(id)) => {
@@ -405,9 +405,5 @@ pub(crate) fn read_schema() -> Table {
     let file = std::fs::File::open("schemaorg.jsonld").unwrap();
     let reader = std::io::BufReader::new(file);
     let root: Root = serde_json::from_reader(reader).unwrap();
-    let tmp = Table::from(&root);
-    for p in &tmp.classes.get("schema:Thing").unwrap().properties {
-        println!("{:?}", p);
-    }
-    tmp
+    Table::from(&root)
 }
