@@ -203,7 +203,9 @@ impl {}Prop {{
                 continue;
             }
             let mut class_outuput = Self::header_with_doc(&class.comment);
-            class_outuput += &format!("pub struct {} {{\n", id_to_token(&class.label));
+            let class_name = id_to_token(&class.label);
+            class_outuput += &format!("pub struct {} {{\n", class_name);
+            let mut props_init = String::new();
             for prop in &class.properties {
                 let prop = if let Some(prop) = table.properties.get(&prop.id) {
                     prop
@@ -220,13 +222,14 @@ impl {}Prop {{
                 }
                 let range_suffix = if range_include.len() > 1 { "Range" } else { "" };
                 let prop_type = id_to_token(&prop.label);
+                let arg_name = prop_type.to_case(Case::Snake);
+                props_init += &format!("        {}: Vec::new(),\n", arg_name);
                 class_outuput += &format!(
                     "    pub {}: Vec<{}{}Prop>,\n",
-                    prop_type.to_case(Case::Snake),
-                    prop_type,
-                    range_suffix
+                    arg_name, prop_type, range_suffix
                 );
             }
+            let mut sub_classes = Vec::new();
             match class.sub_classes.len() {
                 1 => {
                     let sub_class_id = class.sub_classes.clone().drain().next().unwrap().id;
@@ -236,8 +239,9 @@ impl {}Prop {{
                         println!("Sub class {sub_class_id} not found.");
                         continue;
                     };
-                    class_outuput +=
-                        &format!("    pub sub_class: {},\n", id_to_token(&sub_class.label));
+                    let token = id_to_token(&sub_class.label);
+                    sub_classes.push(token.clone());
+                    class_outuput += &format!("    pub sub_class: {},\n", token);
                 }
                 0 => {}
                 _ => {
@@ -260,7 +264,7 @@ impl {}Prop {{
                 let mut herticance_enum = format!(
                     "#[derive({})]\npub enum {}SubClasses {{\n",
                     to_derive.join(", "),
-                    id_to_token(&class.label)
+                    class_name
                 );
 
                 for sub_class in &class.sub_classes {
@@ -271,13 +275,51 @@ impl {}Prop {{
                         continue;
                     };
                     let sub_class = id_to_token(&sub_class.label);
+                    sub_classes.push(sub_class.clone());
                     herticance_enum += &format!("    {}({}),\n", sub_class, sub_class);
                 }
                 herticance_enum += "}\n\n";
                 class_outuput += &herticance_enum;
             }
-            let class = id_to_token(&class.label);
-            types_variations += &format!("   {}({}),\n", &class, &class);
+            types_variations += &format!("   {}({}),\n", &class_name, &class_name);
+
+            // Impl of schema trait
+
+            let sub_class_init = match sub_classes.len() {
+                1 => format!("sub_class: {}::new(),", sub_classes[0]),
+                0 => String::new(),
+                _ => {
+                    let inits = sub_classes
+                        .iter()
+                        .map(|el| format!("{}SubClasses::{}({}::new())", class_name, el, el))
+                        .collect::<Vec<String>>()
+                        .join(",");
+                    format!("sub_classes: [{}],", inits)
+                }
+            };
+
+            let implementation = format!(
+                r#"impl Schema for {} {{
+    fn new() -> Self {{
+        Self {{
+            {}
+            {}
+        }}
+    }}           
+
+    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {{
+        Ok(())
+    }}
+    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {{
+        Ok(())
+    }}
+  
+}}
+"#,
+                class_name, props_init, sub_class_init
+            );
+
+            class_outuput += &implementation;
             classes_output += &class_outuput;
         }
 
