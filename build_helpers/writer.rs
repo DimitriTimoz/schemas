@@ -1,5 +1,3 @@
-use std::primitive;
-
 use convert_case::{Case, Casing};
 
 use super::parse_file::{Id, Table};
@@ -187,7 +185,7 @@ impl {}Prop {{
                     prop_output += &format!("pub enum {}RangeProp {{\n", id_to_token(label));
                     for range in &range_include {
                         prop_output += &format!(
-                            "    {}(Vec<{}>),\n",
+                            "    {}({}),\n",
                             id_to_token(&range.id),
                             id_to_token(&range.id)
                         );
