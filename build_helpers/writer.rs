@@ -1,6 +1,6 @@
 use convert_case::{Case, Casing};
 
-use super::parse_file::Table;
+use super::parse_file::{Table, Id};
 
 pub struct ToWrite {}
 
@@ -76,8 +76,12 @@ impl ToWrite {
         // properties.rs
         for property in table.properties.values() {
             let mut prop_output = Self::header_with_doc(&property.comment);
-
-            match property.range_includes.len() {
+            let mut range_include = property.range_includes.clone();
+            let txt = Id { id: "schema:Text".to_string() };
+            if !range_include.contains(&txt) {
+                range_include.insert(txt);
+            }
+            match range_include.len() {
                 0 => {
                     println!("Property {} has no range inclDudes.", property.id);
                     prop_output += &format!("pub struct {}Prop;\n", id_to_token(&property.label));
@@ -91,8 +95,7 @@ impl ToWrite {
                 }
                 1 => {
                     // Struct
-                    let range = property
-                        .range_includes
+                    let range = range_include
                         .clone()
                         .drain()
                         .next()
@@ -108,7 +111,13 @@ impl ToWrite {
                                     println!("Sub property {} not found.", sub_prop.id);
                                     continue;
                                 };
-                            let range = if sub_prop.range_includes.len() > 1 {
+
+                            let mut range_include = sub_prop.range_includes.clone();
+                            let txt = Id { id: "schema:Text".to_string() };
+                            if !range_include.contains(&txt) {
+                                range_include.insert(txt);
+                            }
+                            let range = if range_include.len() > 1 {
                                 "Range"
                             } else {
                                 ""
@@ -151,7 +160,7 @@ impl {}Prop {{
                     // Enum
                     let label = &property.label;
                     prop_output += &format!("pub enum {}RangeProp {{\n", id_to_token(label));
-                    for range in &property.range_includes {
+                    for range in &range_include {
                         prop_output += &format!(
                             "    {}(Vec<{}>),\n",
                             id_to_token(&range.id),
@@ -179,8 +188,12 @@ impl {}Prop {{
                     println!("Property {} not found.", prop.id);
                     continue;
                 };
-
-                let range_suffix = if prop.range_includes.len() > 1 {
+                let mut range_include = prop.range_includes.clone();
+                let txt = Id { id: "schema:Text".to_string() };
+                if !range_include.contains(&txt) {
+                    range_include.insert(txt);
+                }
+                let range_suffix = if range_include.len() > 1 {
                     "Range"
                 } else {
                     ""
