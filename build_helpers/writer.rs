@@ -221,10 +221,7 @@ impl {}Prop {{
                 let prop_type = id_to_token(&prop.label);
                 let arg_name = prop_type.to_case(Case::Snake);
                 props_init += &format!("        {}: Vec::new(),\n", arg_name);
-                class_outuput += &format!(
-                    "    pub {}: Vec<{}Prop>,\n",
-                    arg_name, prop_type
-                );
+                class_outuput += &format!("    pub {}: Vec<{}Prop>,\n", arg_name, prop_type);
             }
             let mut sub_classes = Vec::new();
             match class.sub_classes.len() {
@@ -282,8 +279,9 @@ impl {}Prop {{
                     );
                 }
                 heritance_enum += "}\n\n";
-      
-                heritance_enum += &format!(r#"
+
+                heritance_enum += &format!(
+                    r#"
 impl {class_name}SubClasses {{
     pub fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {{
         match self {{
@@ -293,7 +291,8 @@ impl {class_name}SubClasses {{
     }}
 }}
 
-                "#);
+                "#
+                );
                 class_outuput += &heritance_enum;
             }
             types_variations += &format!("   {}({}),\n", &class_name, &class_name);
@@ -301,9 +300,10 @@ impl {class_name}SubClasses {{
             // Impl of schema trait
 
             let (sub_class_init, sub_class_test) = match sub_classes.len() {
-                1 => {
-                    (format!("sub_class: {}::new(),", sub_classes.first().unwrap()), String::from("self.sub_class.add_item(name, item)"))
-                },
+                1 => (
+                    format!("sub_class: {}::new(),", sub_classes.first().unwrap()),
+                    String::from("self.sub_class.add_item(name, item)"),
+                ),
                 0 => (String::new(), String::from("Err(Error::InvalidProperty)")),
                 _ => {
                     let inits = sub_classes
@@ -312,15 +312,18 @@ impl {class_name}SubClasses {{
                         .collect::<Vec<String>>()
                         .join(", ");
 
-                    (format!("sub_classes: [{}],", inits), r#"
+                    (
+                        format!("sub_classes: [{}],", inits),
+                        r#"
 for sub_class in self.sub_classes {
     sub_class.add_item(name, item.clone())?;
 }
 Ok(())
-                    "#.to_string())
+                    "#
+                        .to_string(),
+                    )
                 }
             };
-         
 
             let implementation = format!(
                 r#"impl Schema for {class_name} {{
@@ -355,7 +358,8 @@ Ok(())
     }}
   
 }}
-"#);
+"#
+            );
 
             class_outuput += &implementation;
             classes_output += &class_outuput;

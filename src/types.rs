@@ -234,7 +234,6 @@ impl From<&str> for URL {
     }
 }
 
-
 impl Schema for URL {
     fn new() -> Self {
         Self(Text::new())
