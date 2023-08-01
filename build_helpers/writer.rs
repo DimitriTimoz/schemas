@@ -2,7 +2,7 @@ use std::primitive;
 
 use convert_case::{Case, Casing};
 
-use super::parse_file::{Table, Id};
+use super::parse_file::{Id, Table};
 
 pub struct ToWrite {}
 
@@ -14,12 +14,30 @@ const TO_REPLACE: [[&str; 2]; 6] = [
     ["Option", "OptionType"],
     ["PriceRange", "PriceRangeType"],
 ];
-const PRIMITIVE_TYPES: [&str; 8] = [
-    "Text", "Number", "Integer", "Boolean", "Date", "DateTime", "URL", "Time",
+const PRIMITIVE_TYPES: [&str; 10] = [
+    "Text",
+    "Number",
+    "Integer",
+    "Boolean",
+    "Date",
+    "DateTime",
+    "URL",
+    "Time",
+    "XPathType",
+    "CssSelectorType",
 ];
 
-const PRIMITIVE_LC_TYPES: [&str; 8] = [
-    "text", "number", "integer", "boolean", "date", "datetime", "url", "time",
+const PRIMITIVE_LC_TYPES: [&str; 10] = [
+    "text",
+    "number",
+    "integer",
+    "boolean",
+    "date",
+    "datetime",
+    "url",
+    "time",
+    "xpathtype",
+    "cssselectortype",
 ];
 const DIGITS: [&str; 10] = [
     "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
@@ -61,7 +79,6 @@ fn id_to_token(id: &str) -> String {
 }
 
 impl ToWrite {
-
     fn header_with_doc(doc: &str) -> String {
         let mut to_derive = vec!["Debug", "Clone"];
         if cfg!(feature = "serde") {
@@ -83,7 +100,9 @@ impl ToWrite {
         for property in table.properties.values() {
             let mut prop_output = Self::header_with_doc(&property.comment);
             let mut range_include = property.range_includes.clone();
-            let txt = Id { id: "schema:Text".to_string() };
+            let txt = Id {
+                id: "schema:Text".to_string(),
+            };
             if !range_include.contains(&txt) {
                 range_include.insert(txt);
             }
@@ -97,7 +116,6 @@ impl ToWrite {
                         "\nimpl {}Prop {{\n    pub fn new() -> Self {{\n        Self\n    }}\n}}\n\n",
                         id_to_token(&property.label)
                     );
-
                 }
                 1 => {
                     // Struct
@@ -119,15 +137,13 @@ impl ToWrite {
                                 };
 
                             let mut range_include = sub_prop.range_includes.clone();
-                            let txt = Id { id: "schema:Text".to_string() };
+                            let txt = Id {
+                                id: "schema:Text".to_string(),
+                            };
                             if !range_include.contains(&txt) {
                                 range_include.insert(txt);
                             }
-                            let range = if range_include.len() > 1 {
-                                "Range"
-                            } else {
-                                ""
-                            };
+                            let range = if range_include.len() > 1 { "Range" } else { "" };
                             let sub_prop_name = id_to_token(&sub_prop.label).to_case(Case::Snake);
                             sub_props_names.push(sub_prop_name.clone());
                             args += &format!(
@@ -140,7 +156,10 @@ impl ToWrite {
                         args += "}\n";
 
                         // Impl of new()
-                        let sub_props_names = sub_props_names.iter().map(|s| s.to_string() + ": Vec::new()").collect::<Vec<String>>();
+                        let sub_props_names = sub_props_names
+                            .iter()
+                            .map(|s| s.to_string() + ": Vec::new()")
+                            .collect::<Vec<String>>();
                         let sub_props_names = sub_props_names.join(",\n  ");
                         args += &format!(
                             r#"
@@ -195,15 +214,13 @@ impl {}Prop {{
                     continue;
                 };
                 let mut range_include = prop.range_includes.clone();
-                let txt = Id { id: "schema:Text".to_string() };
+                let txt = Id {
+                    id: "schema:Text".to_string(),
+                };
                 if !range_include.contains(&txt) {
                     range_include.insert(txt);
                 }
-                let range_suffix = if range_include.len() > 1 {
-                    "Range"
-                } else {
-                    ""
-                };
+                let range_suffix = if range_include.len() > 1 { "Range" } else { "" };
                 let prop_type = id_to_token(&prop.label);
                 class_outuput += &format!(
                     "    pub {}: Vec<{}{}Prop>,\n",
@@ -215,13 +232,12 @@ impl {}Prop {{
             match class.sub_classes.len() {
                 1 => {
                     let sub_class_id = class.sub_classes.clone().drain().next().unwrap().id;
-                    let sub_class =
-                        if let Some(sub_class) = table.classes.get(&sub_class_id) {
-                            sub_class
-                        } else {
-                            println!("Sub class {sub_class_id} not found.");
-                            continue;
-                        };
+                    let sub_class = if let Some(sub_class) = table.classes.get(&sub_class_id) {
+                        sub_class
+                    } else {
+                        println!("Sub class {sub_class_id} not found.");
+                        continue;
+                    };
                     class_outuput +=
                         &format!("    pub sub_class: {},\n", id_to_token(&sub_class.label));
                 }
@@ -257,32 +273,19 @@ impl {}Prop {{
                         continue;
                     };
                     let sub_class = id_to_token(&sub_class.label);
-                    herticance_enum += &format!(
-                        "    {}({}),\n",
-                        sub_class,
-                        sub_class
-                    );
+                    herticance_enum += &format!("    {}({}),\n", sub_class, sub_class);
                 }
                 herticance_enum += "}\n\n";
                 class_outuput += &herticance_enum;
             }
             let class = id_to_token(&class.label);
-            types_variations += &format!(
-                "   {}({}),\n",
-                &class,
-                &class
-            );
+            types_variations += &format!("   {}({}),\n", &class, &class);
             classes_output += &class_outuput;
         }
         for primitive_type in PRIMITIVE_TYPES {
-            let primitive_type = id_to_token(&primitive_type);
-            types_variations += &format!(
-                "   {}({}),\n",
-                primitive_type,
-                primitive_type
-            );
+            let primitive_type = id_to_token(primitive_type);
+            types_variations += &format!("   {}({}),\n", primitive_type, primitive_type);
         }
-
 
         for (label, id) in &table.same_name {
             let class = if let Some(class) = table.classes.get(id) {
@@ -300,8 +303,12 @@ impl {}Prop {{
             to_derive.push("Serialize");
             to_derive.push("Deserialize");
         }
-        classes_output += &format!("#[derive({})]\npub enum Types {{\n{}\n}}\n\n", to_derive.join(", "), types_variations);
+        classes_output += &format!(
+            "#[derive({})]\npub enum Types {{\n{}\n}}\n\n",
+            to_derive.join(", "),
+            types_variations
+        );
 
-        (props_output, classes_output, )
+        (props_output, classes_output)
     }
 }

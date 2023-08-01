@@ -192,14 +192,12 @@ pub(crate) struct PropertyDesc {
     pub(crate) sub_properties: HashSet<Id>, // Sous propriétés
 }
 
-
-
 #[derive(Debug)]
 pub(crate) struct ClassDesc {
     pub(crate) label: String, // Name of the class PascalCase
     pub(crate) comment: String,
-    pub(crate) sub_classes: HashSet<Id>, 
-    pub(crate) properties: HashSet<Id>,  // Properties of the class
+    pub(crate) sub_classes: HashSet<Id>,
+    pub(crate) properties: HashSet<Id>, // Properties of the class
 }
 
 #[derive(Debug)]
@@ -288,7 +286,7 @@ impl Table {
                         comment: comment.clone(),
                         label: label.clone(),
                         range_includes: range_include.into_iter().collect(),
-                        sub_properties: HashSet::new()
+                        sub_properties: HashSet::new(),
                     },
                 );
             } else {
