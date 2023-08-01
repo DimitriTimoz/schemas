@@ -315,10 +315,10 @@ impl {class_name}SubClasses {{
                     (
                         format!("sub_classes: [{}],", inits),
                         r#"
-for sub_class in self.sub_classes {
-    sub_class.add_item(name, item.clone())?;
-}
-Ok(())
+                for mut sub_class in self.sub_classes.iter_mut() {
+                    sub_class.add_item(name.clone(), item.clone())?;
+                }
+                Ok(())
                     "#
                         .to_string(),
                     )
