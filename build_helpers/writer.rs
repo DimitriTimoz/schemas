@@ -92,7 +92,7 @@ impl ToWrite {
 
     pub(crate) fn write_files(table: &mut Table) -> (String, String) {
         let mut props_output = String::new();
-        let mut classes_output = String::new();
+        let mut classes_output: String = String::new();
 
         // properties.rs
         for property in table.properties.values() {
@@ -274,7 +274,7 @@ impl {}Prop {{
                     heritance_enum += &format!("    {}({}),\n", sub_class, sub_class);
 
                     patterns += &format!(
-                        "                            {}SubClasses::{}(object) => object.add_item(name, item),\n",
+                        "           {}SubClasses::{}(object) => object.add_item(name, item),\n",
                         class_name, sub_class
                     );
                 }
@@ -285,8 +285,7 @@ impl {}Prop {{
 impl {class_name}SubClasses {{
     pub fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {{
         match self {{
-            {patterns}
-            _ => Err(Error::InvalidProperty),
+{patterns}_ => Err(Error::InvalidProperty),
         }}
     }}
 }}
@@ -316,6 +315,7 @@ impl {class_name}SubClasses {{
                         format!("sub_classes: [{}],", inits),
                         r#"
                 for mut sub_class in self.sub_classes.iter_mut() {
+                    todo!("If error continue to next sub class and if success return Ok(()).");
                     sub_class.add_item(name.clone(), item.clone())?;
                 }
                 Ok(())
@@ -324,6 +324,8 @@ impl {class_name}SubClasses {{
                     )
                 }
             };
+
+            
 
             let implementation = format!(
                 r#"impl Schema for {class_name} {{
@@ -336,11 +338,10 @@ impl {class_name}SubClasses {{
 
     fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {{
         match name.to_lowercase().as_str() {{
-            "" => {{
-                Ok(())
-            }},
-            _ => Err(Error::InvalidProperty),
+            "" => {{}},
+            _ => return Err(Error::InvalidProperty),
         }}
+        Ok(())
     }}
 
     fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {{
