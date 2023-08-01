@@ -141,14 +141,12 @@ impl ToWrite {
                             if !range_include.contains(&txt) {
                                 range_include.insert(txt);
                             }
-                            let range = if range_include.len() > 1 { "Range" } else { "" };
                             let sub_prop_name = id_to_token(&sub_prop.label).to_case(Case::Snake);
                             sub_props_names.push(sub_prop_name.clone());
                             args += &format!(
-                                "  pub {}: Vec<{}{}Prop>,\n",
+                                "  pub {}: Vec<{}Prop>,\n",
                                 sub_prop_name,
                                 id_to_token(&sub_prop.label),
-                                range
                             );
                         }
                         args += "}\n";
@@ -182,7 +180,7 @@ impl {}Prop {{
                 _ => {
                     // Enum
                     let label = &property.label;
-                    prop_output += &format!("pub enum {}RangeProp {{\n", id_to_token(label));
+                    prop_output += &format!("pub enum {}Prop {{\n", id_to_token(label));
                     for range in &range_include {
                         prop_output += &format!(
                             "    {}({}),\n",
@@ -220,13 +218,12 @@ impl {}Prop {{
                 if !range_include.contains(&txt) {
                     range_include.insert(txt);
                 }
-                let range_suffix = if range_include.len() > 1 { "Range" } else { "" };
                 let prop_type = id_to_token(&prop.label);
                 let arg_name = prop_type.to_case(Case::Snake);
                 props_init += &format!("        {}: Vec::new(),\n", arg_name);
                 class_outuput += &format!(
-                    "    pub {}: Vec<{}{}Prop>,\n",
-                    arg_name, prop_type, range_suffix
+                    "    pub {}: Vec<{}Prop>,\n",
+                    arg_name, prop_type
                 );
             }
             let mut sub_classes = Vec::new();
@@ -261,12 +258,13 @@ impl {}Prop {{
                     to_derive.push("Serialize");
                     to_derive.push("Deserialize");
                 }
-                let mut herticance_enum = format!(
+                let mut heritance_enum = format!(
                     "#[derive({})]\npub enum {}SubClasses {{\n",
                     to_derive.join(", "),
                     class_name
                 );
 
+                let mut patterns = String::new();
                 for sub_class in &class.sub_classes {
                     let sub_class = if let Some(sub_class) = table.classes.get(&sub_class.id) {
                         sub_class
@@ -276,48 +274,88 @@ impl {}Prop {{
                     };
                     let sub_class = id_to_token(&sub_class.label);
                     sub_classes.push(sub_class.clone());
-                    herticance_enum += &format!("    {}({}),\n", sub_class, sub_class);
+                    heritance_enum += &format!("    {}({}),\n", sub_class, sub_class);
+
+                    patterns += &format!(
+                        "                            {}SubClasses::{}(object) => object.add_item(name, item),\n",
+                        class_name, sub_class
+                    );
                 }
-                herticance_enum += "}\n\n";
-                class_outuput += &herticance_enum;
+                heritance_enum += "}\n\n";
+      
+                heritance_enum += &format!(r#"
+impl {class_name}SubClasses {{
+    pub fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {{
+        match self {{
+            {patterns}
+            _ => Err(Error::InvalidProperty),
+        }}
+    }}
+}}
+
+                "#);
+                class_outuput += &heritance_enum;
             }
             types_variations += &format!("   {}({}),\n", &class_name, &class_name);
 
             // Impl of schema trait
 
-            let sub_class_init = match sub_classes.len() {
-                1 => format!("sub_class: {}::new(),", sub_classes[0]),
-                0 => String::new(),
+            let (sub_class_init, sub_class_test) = match sub_classes.len() {
+                1 => {
+                    (format!("sub_class: {}::new(),", sub_classes.first().unwrap()), String::from("self.sub_class.add_item(name, item)"))
+                },
+                0 => (String::new(), String::from("Err(Error::InvalidProperty)")),
                 _ => {
                     let inits = sub_classes
                         .iter()
                         .map(|el| format!("{}SubClasses::{}({}::new())", class_name, el, el))
                         .collect::<Vec<String>>()
-                        .join(",");
-                    format!("sub_classes: [{}],", inits)
+                        .join(", ");
+
+                    (format!("sub_classes: [{}],", inits), r#"
+for sub_class in self.sub_classes {
+    sub_class.add_item(name, item.clone())?;
+}
+Ok(())
+                    "#.to_string())
                 }
             };
+         
 
             let implementation = format!(
-                r#"impl Schema for {} {{
+                r#"impl Schema for {class_name} {{
     fn new() -> Self {{
         Self {{
-            {}
-            {}
+            {props_init}
+            {sub_class_init}
         }}
     }}           
 
     fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {{
-        Ok(())
+        match name.to_lowercase().as_str() {{
+            "" => {{
+                Ok(())
+            }},
+            _ => Err(Error::InvalidProperty),
+        }}
     }}
+
     fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {{
-        Ok(())
+        match name.to_lowercase().as_str() {{
+            "" => match item {{
+                Types::Date(date) => {{
+                    Ok(())
+                }}
+                _ => Err(Error::InvalidType),
+            }},
+            _ => {{
+                {sub_class_test}
+            }},
+        }}
     }}
   
 }}
-"#,
-                class_name, props_init, sub_class_init
-            );
+"#);
 
             class_outuput += &implementation;
             classes_output += &class_outuput;
