@@ -1,3 +1,5 @@
+use std::primitive;
+
 use convert_case::{Case, Casing};
 
 use super::parse_file::{Table, Id};
@@ -12,8 +14,12 @@ const TO_REPLACE: [[&str; 2]; 6] = [
     ["Option", "OptionType"],
     ["PriceRange", "PriceRangeType"],
 ];
-const PRIMITIVE_TYPES: [&str; 7] = [
-    "text", "number", "boolean", "date", "datetime", "url", "time",
+const PRIMITIVE_TYPES: [&str; 8] = [
+    "Text", "Number", "Integer", "Boolean", "Date", "DateTime", "URL", "Time",
+];
+
+const PRIMITIVE_LC_TYPES: [&str; 8] = [
+    "text", "number", "integer", "boolean", "date", "datetime", "url", "time",
 ];
 const DIGITS: [&str; 10] = [
     "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
@@ -176,7 +182,7 @@ impl {}Prop {{
         // types.rs
         let mut types_variations = String::new();
         for class in table.classes.values() {
-            if PRIMITIVE_TYPES.contains(&class.label.to_lowercase().as_str()) {
+            if PRIMITIVE_LC_TYPES.contains(&class.label.to_lowercase().as_str()) {
                 continue;
             }
             let mut class_outuput = Self::header_with_doc(&class.comment);
@@ -268,6 +274,15 @@ impl {}Prop {{
             );
             classes_output += &class_outuput;
         }
+        for primitive_type in PRIMITIVE_TYPES {
+            let primitive_type = id_to_token(&primitive_type);
+            types_variations += &format!(
+                "   {}({}),\n",
+                primitive_type,
+                primitive_type
+            );
+        }
+
 
         for (label, id) in &table.same_name {
             let class = if let Some(class) = table.classes.get(id) {

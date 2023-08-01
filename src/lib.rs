@@ -3,4 +3,4 @@ pub mod prelude;
 pub mod properties;
 pub mod types;
 pub mod builder;
-pub mod trait;
+pub mod traits;

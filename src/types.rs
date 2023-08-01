@@ -1,4 +1,4 @@
-use crate::properties::*;
+use crate::prelude::*;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -11,10 +11,20 @@ impl Schema for Text {
         Self(String::new())
     }
 
-    fn add_property(&mut self, name: String, value: String) {
+    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
         match name.as_str() {
-            "text" => self.0 = value,
-            _ => (),
+            "text" => Ok(self.0 = value),
+            _ => Err(Error::InvalidProperty),
+        }
+    }
+
+    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+        match name.as_str() {
+            "text" => match item {
+                Types::Text(text) => Ok(self.0 = text.0),
+                _ => Err(Error::InvalidType),
+            },
+            _ => Err(Error::InvalidProperty),
         }
     }
 }
@@ -28,23 +38,54 @@ impl Schema for Number {
         Self(0.0)
     }
 
-    fn add_property(&mut self, name: String, value: String) {
+    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
         match name.as_str() {
-            "number" => self.0 = value.parse::<f64>().unwrap(),
-            _ => (),
+            "number" => match value.parse::<f64>() {
+                Ok(number) => Ok(self.0 = number),
+                Err(_) => Err(Error::InvalidValue),
+            },
+            _ => Err(Error::InvalidProperty),
+        }
+    }
+
+    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+        match name.as_str() {
+            "number" => match item {
+                Types::Number(number) => Ok(self.0 = number.0),
+                _ => Err(Error::InvalidType),
+            },
+            _ => Err(Error::InvalidProperty),
         }
     }
 }
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Integer(i64);
-
-impl Integer {
-    pub fn new() -> Self {
+impl Schema for Integer {
+    fn new() -> Self {
         Self(0)
     }
-}
 
+    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+        match name.as_str() {
+            "integer" => match value.parse::<i64>() {
+                Ok(number) => Ok(self.0 = number),
+                Err(_) => Err(Error::InvalidValue),
+            },
+            _ => Err(Error::InvalidProperty),
+        }
+    }
+
+    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+        match name.as_str() {
+            "integer" => match item {
+                Types::Integer(integer) => Ok(self.0 = integer.0),
+                _ => Err(Error::InvalidType),
+            },
+            _ => Err(Error::InvalidProperty),
+        }
+    }
+}
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Boolean(bool);
