@@ -41,7 +41,7 @@ pub(crate) struct Context {
     pub(crate) xsd: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub(crate) struct Id {
     #[serde(rename = "@id")]
     pub(crate) id: String,
@@ -188,8 +188,8 @@ pub(crate) struct PropertyDesc {
     pub(crate) id: String,
     pub(crate) comment: String,
     pub(crate) label: String, // Name of the property camelCase for the type argument
-    pub(crate) range_includes: Vec<Id>, // Range of the property
-    pub(crate) sub_properties: Vec<Id>, // Sous propriétés
+    pub(crate) range_includes: HashSet<Id>, // Range of the property
+    pub(crate) sub_properties: HashSet<Id>, // Sous propriétés
 }
 
 
@@ -198,8 +198,8 @@ pub(crate) struct PropertyDesc {
 pub(crate) struct ClassDesc {
     pub(crate) label: String, // Name of the class PascalCase
     pub(crate) comment: String,
-    pub(crate) sub_classes: Vec<Id>, 
-    pub(crate) properties: Vec<Id>,  // Properties of the class
+    pub(crate) sub_classes: HashSet<Id>, 
+    pub(crate) properties: HashSet<Id>,  // Properties of the class
 }
 
 #[derive(Debug)]
@@ -255,8 +255,8 @@ impl Table {
                 let class = ClassDesc {
                     comment: comment.clone(),
                     label: label.clone(),
-                    sub_classes: Vec::new(),
-                    properties: Vec::new(),
+                    sub_classes: HashSet::new(),
+                    properties: HashSet::new(),
                 };
                 classes.insert(id.to_string(), class);
             } else if type_name.contains("Property") {
@@ -287,8 +287,8 @@ impl Table {
                         id,
                         comment: comment.clone(),
                         label: label.clone(),
-                        range_includes: range_include,
-                        sub_properties: Vec::new(),
+                        range_includes: range_include.into_iter().collect(),
+                        sub_properties: HashSet::new()
                     },
                 );
             } else {
@@ -338,7 +338,7 @@ impl Table {
                     continue;
                 };
 
-                class.sub_classes = childs;
+                class.sub_classes.extend(childs.into_iter());
 
                 // Add the sub properties to property parents
                 let childs = match &node.rdfs_sub_property_of {
@@ -348,7 +348,7 @@ impl Table {
                     Some(SubPropertyOf::Ids(ids)) => ids.to_vec(),
                     None => Vec::new(),
                 };
-                class.properties = childs;
+                class.properties.extend(childs.into_iter());
             } else if type_name.contains("Property") {
                 let childs = match &node.rdfs_sub_property_of {
                     Some(SubPropertyOf::Id(id)) => {
@@ -364,7 +364,7 @@ impl Table {
                     println!("Property {} not found.", id);
                     continue;
                 };
-                property.sub_properties = childs;
+                property.sub_properties = childs.into_iter().collect();
 
                 // Add the properties to classes
                 let classes_with_prop = match &node.schema_domain_includes {
@@ -383,8 +383,7 @@ impl Table {
                         continue;
                     };
 
-                    class.properties.push(Id { id: id.to_owned() });
-                    class.properties.dedup();
+                    class.properties.insert(Id { id: id.to_owned() });
                 }
             } else {
                 let label = match &node.rdfs_label {
