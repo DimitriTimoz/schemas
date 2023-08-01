@@ -282,6 +282,8 @@ impl {}Prop {{
             types_variations += &format!("   {}({}),\n", &class, &class);
             classes_output += &class_outuput;
         }
+
+        // Enum of all types
         for primitive_type in PRIMITIVE_TYPES {
             let primitive_type = id_to_token(primitive_type);
             types_variations += &format!("   {}({}),\n", primitive_type, primitive_type);
