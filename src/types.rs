@@ -35,6 +35,18 @@ impl Schema for Text {
     }
 }
 
+impl From<String> for Text {
+    fn from(text: String) -> Self {
+        Self(text)
+    }
+}
+
+impl From<&str> for Text {
+    fn from(text: &str) -> Self {
+        Self(text.to_string())
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Number(f64);
@@ -209,6 +221,19 @@ impl Schema for DateTime {
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct URL(Text);
+
+impl From<String> for URL {
+    fn from(text: String) -> Self {
+        Self(Text(text))
+    }
+}
+
+impl From<&str> for URL {
+    fn from(text: &str) -> Self {
+        Self(Text(text.to_string()))
+    }
+}
+
 
 impl Schema for URL {
     fn new() -> Self {
