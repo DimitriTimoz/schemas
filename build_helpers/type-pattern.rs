@@ -31,5 +31,6 @@ impl Schema for PatternType {
                 return Err(Error::InvalidProperty);
             },
         }
+        Ok(())
     }
 }

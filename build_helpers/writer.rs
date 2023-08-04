@@ -235,7 +235,7 @@ impl {}Prop {{
         }
 
         // types.rs
-        let mut types_variations = String::new();
+        let mut types_variants = String::new();
         let mut outputs: Vec<String> = Vec::new();
         let pattern = include_str!("type-pattern.rs");
         let prop_type_matcher_pattern = r#"match value {
@@ -310,179 +310,23 @@ impl {}Prop {{
                         .collect(),
                 ]
             );
-            
-            let mut class_outuput = Self::header_with_doc(&class.comment);
-            let class_name = id_to_token(&class.label);
-            class_outuput += &format!("pub struct {} {{\n", class_name);
-            let mut props_init = String::new();
-            for prop in &class.properties {
-                let prop = if let Some(prop) = table.properties.get(&prop.id) {
-                    prop
-                } else {
-                    println!("Property {} not found.", prop.id);
-                    continue;
-                };
-                let mut range_include = prop.range_includes.clone();
-                let txt = Id {
-                    id: "schema:Text".to_string(),
-                };
-                range_include.insert(txt);
-                let prop_type = id_to_token(&prop.label);
-                let arg_name = prop_type.to_case(Case::Snake);
-                props_init += &format!("        {}: Vec::new(),\n", arg_name);
-                class_outuput += &format!("    pub {}: Vec<{}Prop>,\n", arg_name, prop_type);
-            }
-            let mut sub_classes = Vec::new();
-            match class.sub_classes.len() {
-                1 => {
-                    let sub_class_id = class.sub_classes.clone().drain().next().unwrap().id;
-                    let sub_class = if let Some(sub_class) = table.classes.get(&sub_class_id) {
-                        sub_class
-                    } else {
-                        println!("Sub class {sub_class_id} not found.");
-                        continue;
-                    };
-                    let token = id_to_token(&sub_class.label);
-                    sub_classes.push(token.clone());
-                    class_outuput += &format!("    pub sub_class: {},\n", token);
-                }
-                0 => {}
-                _ => {
-                    class_outuput += &format!(
-                        "    pub sub_classes: [{}SubClasses; {}],\n",
-                        id_to_token(&class.label),
-                        class.sub_classes.len()
-                    );
-                }
-            }
-            class_outuput += "}\n\n";
-
-            // Heritance enum
-            if class.sub_classes.len() > 1 {
-                let mut to_derive = vec!["Debug", "Clone"];
-                if cfg!(feature = "serde") {
-                    to_derive.push("Serialize");
-                    to_derive.push("Deserialize");
-                }
-                let mut heritance_enum = format!(
-                    "#[derive({})]\npub enum {}SubClasses {{\n",
-                    to_derive.join(", "),
-                    class_name
-                );
-
-                let mut patterns = String::new();
-                for sub_class in &class.sub_classes {
-                    let sub_class = if let Some(sub_class) = table.classes.get(&sub_class.id) {
-                        sub_class
-                    } else {
-                        println!("Sub class {} not found.", sub_class.id);
-                        continue;
-                    };
-                    let sub_class = id_to_token(&sub_class.label);
-                    sub_classes.push(sub_class.clone());
-                    heritance_enum += &format!("    {}({}),\n", sub_class, sub_class);
-
-                    patterns += &format!(
-                        "           {}SubClasses::{}(object) => object.add_item(name, item),\n",
-                        class_name, sub_class
-                    );
-                }
-                heritance_enum += "}\n\n";
-
-                heritance_enum += &format!(
-                    r#"
-impl {class_name}SubClasses {{
-    pub fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {{
-        match self {{
-{patterns}_ => Err(Error::InvalidProperty),
-        }}
-    }}
-}}
-
-                "#
-                );
-                class_outuput += &heritance_enum;
-            }
-            types_variations += &format!("   {}({}),\n", &class_name, &class_name);
-
-            // Impl of schema trait
-
-            let (sub_class_init, sub_class_test) = match sub_classes.len() {
-                1 => (
-                    format!("sub_class: {}::new(),", sub_classes.first().unwrap()),
-                    String::from("self.sub_class.add_item(name, item)"),
-                ),
-                0 => (String::new(), String::from("Err(Error::InvalidProperty)")),
-                _ => {
-                    let inits = sub_classes
-                        .iter()
-                        .map(|el| format!("{}SubClasses::{}({}::new())", class_name, el, el))
-                        .collect::<Vec<String>>()
-                        .join(", ");
-
-                    (
-                        format!("sub_classes: [{}],", inits),
-                        r#"
-                for mut sub_class in self.sub_classes.iter_mut() {
-                    todo!("If error continue to next sub class and if success return Ok(()).");
-                    sub_class.add_item(name.clone(), item.clone())?;
-                }
-                Ok(())
-                    "#
-                        .to_string(),
-                    )
-                }
-            };
-
-            
-
-            let implementation = format!(
-                r#"impl Schema for {class_name} {{
-    fn new() -> Self {{
-        Self {{
-            {props_init}
-            {sub_class_init}
-        }}
-    }}           
-
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {{
-        match name.to_lowercase().as_str() {{
-            "" => {{}},
-            _ => return Err(Error::InvalidProperty),
-        }}
-        Ok(())
-    }}
-
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {{
-        match name.to_lowercase().as_str() {{
-            "" => match item {{
-                Types::Date(date) => {{
-                    Ok(())
-                }}
-                _ => Err(Error::InvalidType),
-            }},
-            _ => {{
-                {sub_class_test}
-            }},
-        }}
-    }}
-  
-}}
-"#
-            );
-
-            class_outuput += &implementation;
-            classes_output += &class_outuput;
 
             outputs.push(output);
         }
 
-        std::fs::write("src/test.rs", outputs.join("\n\n\n")).expect("Unable to write file");
+        let mut types_code = outputs.join("\n\n\n");
+
 
         // Enum of all types
         for primitive_type in PRIMITIVE_TYPES {
             let primitive_type = id_to_token(primitive_type);
-            types_variations += &format!("   {}({}),\n", primitive_type, primitive_type);
+            types_variants += &format!("   {}({}),\n", primitive_type, primitive_type);
+        }
+        for ty in table.classes.values() {
+            if PRIMITIVE_LC_TYPES.contains(&ty.label.to_lowercase().as_str()) {
+                continue;
+            }
+            types_variants += &format!("   {}({}),\n", id_to_token(&ty.label), id_to_token(&ty.label));
         }
 
         for (label, id) in &table.same_name {
@@ -501,11 +345,14 @@ impl {class_name}SubClasses {{
             to_derive.push("Serialize");
             to_derive.push("Deserialize");
         }
-        classes_output += &format!(
+        types_code += &format!(
             "#[derive({})]\npub enum Types {{\n{}\n}}\n\n",
             to_derive.join(", "),
-            types_variations
+            types_variants
         );
+
+        std::fs::write("src/test.rs", types_code).expect("Unable to write file");
+
 
         (props_output, classes_output)
     }
