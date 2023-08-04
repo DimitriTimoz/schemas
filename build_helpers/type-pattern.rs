@@ -21,12 +21,11 @@ impl Schema for PatternType {
 
     fn add_lc_property(&mut self, name: &str, value: Types) -> Result<(), Error> {
         match name {
-            "pattern_prop_name_lc" => pattern_prop_type_matcher,
+            "pattern_prop_name_lc" => return Ok(pattern_prop_type_matcher),
             _ => {
                 if PatternParent::has_lc_property(name) { return self.pattern_parent.add_lc_property(name, value); }
                 return Err(Error::InvalidProperty);
             },
         }
-        Ok(())
     }
 }

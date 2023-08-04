@@ -185,7 +185,7 @@ impl Default for TxtValue {
 
 #[derive(Debug)]
 pub(crate) struct PropertyDesc {
-    pub(crate) id: String,
+    pub(crate) _id: String,
     pub(crate) comment: String,
     pub(crate) label: String, // Name of the property camelCase for the type argument
     pub(crate) range_includes: HashSet<Id>, // Range of the property
@@ -211,14 +211,12 @@ pub(crate) struct SpecialTypeDesc {
 pub(crate) struct Table {
     pub(crate) classes: HashMap<String, ClassDesc>,
     pub(crate) properties: HashMap<String, PropertyDesc>,
-    pub(crate) same_name: HashMap<String, String>,
 }
 
 impl Table {
     pub(crate) fn from(schema: &Root) -> Table {
         let mut classes = HashMap::new();
         let mut properties = HashMap::new();
-        let mut same_name = HashMap::new();
         let mut special_type = HashMap::new();
 
         // Add all existing elements to the table
@@ -229,13 +227,6 @@ impl Table {
                 Type::Type(type_name) => type_name,
                 Type::Types(types) => types.first().unwrap(),
             };
-
-            if let Some(superseded_by) = &node.schema_superseded_by {
-                same_name.insert(
-                    id.to_string(),
-                    superseded_by.id.trim_start_matches("schema:").to_string(),
-                );
-            }
 
             if type_name.contains("Class") {
                 let comment = match &node.rdfs_comment {
@@ -279,7 +270,7 @@ impl Table {
                 properties.insert(
                     id.clone(),
                     PropertyDesc {
-                        id,
+                        _id: id,
                         comment: comment.clone(),
                         label: label.clone(),
                         range_includes,
@@ -391,7 +382,6 @@ impl Table {
         Self {
             classes,
             properties,
-            same_name,
         }
     }
 }
