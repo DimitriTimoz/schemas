@@ -10,9 +10,8 @@ pub trait Schema {
     fn add_property(&mut self, property: &str, value: Types) -> Result<(), Error> {
         self.add_lc_property(&property.to_lowercase(), value)
     }
-    fn add_text_lc_property(&mut self, property_lc: &str, item: Types) -> Result<(), Error>;
-    fn add_text_propery(&mut self, property: &str, item: Types) -> Result<(), Error> {
-        self.add_text_lc_property(&property.to_lowercase(), item)
+    fn add_text_propery(&mut self, property: &str, value: String) -> Result<(), Error> {
+        self.add_lc_property(&property.to_lowercase(), Types::Text(value.into()))
     }
 }
 
