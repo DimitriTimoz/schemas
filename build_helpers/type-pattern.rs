@@ -13,18 +13,29 @@ pub struct PatternType {
 impl Schema for PatternType {
     fn new() -> Self {
         Self::default()
-    }           
+    }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
-        match name.to_lowercase().as_str() {
-            "pattern_prop_name" => self.pattern_property.push(PatternPropertyProp::Text(value)),
-            _ => return Err(Error::InvalidProperty),
+    fn has_lc_property(name: &str) -> bool {
+        [
+            "pattern_prop_name_lc",
+        ]
+        .contains(&name)
+        || PatternParent::has_lc_property(name)
+    }
+
+    fn add_lc_property(&mut self, name: &str, value: String) -> Result<(), Error> {
+        match name {
+            "pattern_prop_name_lc" => self.pattern_property.push(PatternPropertyProp::Text(value)),
+            _ => {
+                if PatternParent::has_lc_property(name) { return self.pattern_parent.add_property(name, value); }
+                return Err(Error::InvalidProperty);
+            },
         }
         Ok(())
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
-        match name.to_lowercase().as_str() {
+    fn add_lc_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
+        match name {
             "" => match item {
                 Types::Date(date) => {
                     Ok(())
@@ -36,5 +47,4 @@ impl Schema for PatternType {
             },
         }
     }
-  
 }

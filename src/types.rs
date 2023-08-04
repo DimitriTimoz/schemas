@@ -11,7 +11,7 @@ impl Schema for Text {
         Self(String::new())
     }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+    fn add_property(&mut self, name: &str, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "text" => {
                 self.0 = value;
@@ -21,7 +21,7 @@ impl Schema for Text {
         }
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+    fn add_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "text" => match item {
                 Types::Text(text) => {
@@ -56,7 +56,7 @@ impl Schema for Number {
         Self(0.0)
     }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+    fn add_property(&mut self, name: &str, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "number" => match value.parse::<f64>() {
                 Ok(number) => {
@@ -69,7 +69,7 @@ impl Schema for Number {
         }
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+    fn add_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "number" => match item {
                 Types::Number(number) => {
@@ -90,7 +90,7 @@ impl Schema for Integer {
         Self(0)
     }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+    fn add_property(&mut self, name: &str, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "integer" => match value.parse::<i64>() {
                 Ok(number) => {
@@ -103,7 +103,7 @@ impl Schema for Integer {
         }
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+    fn add_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "integer" => match item {
                 Types::Integer(integer) => {
@@ -125,7 +125,7 @@ impl Schema for Boolean {
         Self(false)
     }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+    fn add_property(&mut self, name: &str, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "boolean" => match value.parse::<bool>() {
                 Ok(boolean) => {
@@ -138,7 +138,7 @@ impl Schema for Boolean {
         }
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+    fn add_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "boolean" => match item {
                 Types::Boolean(boolean) => {
@@ -161,7 +161,7 @@ impl Schema for Date {
         Self(String::new())
     }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+    fn add_property(&mut self, name: &str, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "date" => {
                 self.0 = value.clone();
@@ -171,7 +171,7 @@ impl Schema for Date {
         }
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+    fn add_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "date" => match item {
                 Types::Date(date) => {
@@ -194,7 +194,7 @@ impl Schema for DateTime {
         Self(String::new())
     }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+    fn add_property(&mut self, name: &str, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "datetime" => {
                 self.0 = value.clone();
@@ -204,7 +204,7 @@ impl Schema for DateTime {
         }
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+    fn add_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "datetime" => match item {
                 Types::Date(date) => {
@@ -239,7 +239,7 @@ impl Schema for URL {
         Self(Text::new())
     }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+    fn add_property(&mut self, name: &str, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "url" => {
                 self.0 = Text(value);
@@ -249,7 +249,7 @@ impl Schema for URL {
         }
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+    fn add_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "url" => match item {
                 Types::URL(url) => {
@@ -279,7 +279,7 @@ impl Schema for Time {
         Self(String::new())
     }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+    fn add_property(&mut self, name: &str, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "time" => {
                 self.0 = value.clone();
@@ -289,7 +289,7 @@ impl Schema for Time {
         }
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+    fn add_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "time" => match item {
                 Types::Time(date) => {
@@ -312,7 +312,7 @@ impl Schema for XPathType {
         Self(String::new())
     }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+    fn add_property(&mut self, name: &str, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "xpathtype" => {
                 self.0 = value.clone();
@@ -322,7 +322,7 @@ impl Schema for XPathType {
         }
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+    fn add_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "xpathtype" => match item {
                 Types::XPathType(xpathtype) => {
@@ -344,7 +344,7 @@ impl Schema for CssSelectorType {
         Self(String::new())
     }
 
-    fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
+    fn add_property(&mut self, name: &str, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "cssselectortype" => {
                 self.0 = value.clone();
@@ -354,7 +354,7 @@ impl Schema for CssSelectorType {
         }
     }
 
-    fn add_item(&mut self, name: String, item: Types) -> Result<(), Error> {
+    fn add_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
             "cssselectortype" => match item {
                 Types::CssSelectorType(cssselectortype) => {

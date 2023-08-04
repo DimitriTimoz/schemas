@@ -279,9 +279,9 @@ impl {}Prop {{
             output = multi_replace(output, &["PatternDerive"], vec![to_derive]);
             output = multi_replace(
                 output,
-                &["pattern_prop_name", "pattern_property", "PatternProperty"],
+                &["pattern_prop_name_lc", "pattern_property", "PatternProperty"],
                 vec![
-                    props.iter().map(|prop| prop.label.to_owned()).collect(),
+                    props.iter().map(|prop| prop.label.to_lowercase()).collect(),
                     props.iter()
                         .map(|prop| id_to_token(&prop.label).to_case(Case::Snake))
                         .collect(),
