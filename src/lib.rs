@@ -1,4 +1,4 @@
-#![recursion_limit = "262"]
+#![recursion_limit = "524"]
 pub mod builder;
 pub mod prelude;
 pub mod properties;
