@@ -1,6 +1,5 @@
 use convert_case::{Case, Casing};
-
-use super::parse_file::{Id, Table};
+use super::parse_file::Table;
 
 pub struct ToWrite {}
 
@@ -121,19 +120,6 @@ fn multi_replace(mut text: String, patterns: &'static [&'static str], values: Ve
 }
 
 impl ToWrite {
-    fn header_with_doc(doc: &str) -> String {
-        let mut to_derive = vec!["Debug", "Clone"];
-        if cfg!(feature = "serde") {
-            to_derive.push("Serialize");
-            to_derive.push("Deserialize");
-        }
-        format!(
-            "/// {}\n#[derive({})]\n",
-            doc.replace('\n', "\n/// "),
-            to_derive.join(", ")
-        )
-    }
-
     pub(crate) fn write_files(table: &mut Table) -> (String, String) {
         let mut to_derive = Vec::new();
         if cfg!(feature = "serde") {
@@ -227,9 +213,7 @@ impl ToWrite {
 
             outputs.push(output);
         }
-
-        let mut types_code = outputs.join("\n\n\n");
-
+        let mut types_code = outputs.join("\n\n");
 
         // Enum of all types
         for primitive_type in PRIMITIVE_TYPES {
@@ -253,10 +237,10 @@ impl ToWrite {
             types_variants
         );
 
-        std::fs::write("src/test.rs", types_code.clone()).expect("Unable to write file");
-        std::fs::write("src/test2.rs", prop_outputs.join("\n\n\n")).expect("Unable to write file");
+        // Debugging
+        // std::fs::write("src/test.rs", types_code.clone()).expect("Unable to write file");
+        // std::fs::write("src/test2.rs", prop_outputs.join("\n\n\n")).expect("Unable to write file");
 
-
-        (prop_outputs.join("\n\n\n"), types_code)
+        (prop_outputs.join("\n\n"), types_code)
     }
 }

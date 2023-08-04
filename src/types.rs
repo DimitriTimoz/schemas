@@ -259,4 +259,4 @@ impl Schema for CssSelectorType {
     }
 }
 
-include!("test.rs");
+include!(concat!(env!("OUT_DIR"), "/types.rs"));
