@@ -1,16 +1,18 @@
 /// PatternDoc
-#[derive()]
+#[derive(
+    Debug,
+    Clone,
+    Default,
+    PatternDerive,
+)]
 pub struct PatternType {
-    pub multi_pattern_property: Vec<MultiPatternProperty>,
-    pub sub_class: SubClass,
+    pub pattern_property: Vec<PatternPropertyProp>,
+    pub pattern_parent: PatternParent,
 }
 
 impl Schema for PatternType {
     fn new() -> Self {
-        Self {
-            props_init,
-            sub_class_init
-        }
+        Self::default()
     }           
 
     fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {

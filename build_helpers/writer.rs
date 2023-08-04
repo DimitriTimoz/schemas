@@ -109,7 +109,11 @@ fn multi_replace(mut text: String, patterns: &'static [&'static str], values: Ve
             new_lines.push(new_line);
         }
 
-        text.replace_range(line.clone(), new_lines.join("\n").as_str());
+        if new_lines.is_empty() {
+            text.replace_range(line.start..line.end+1, "");
+        } else {
+            text.replace_range(line.clone(), new_lines.join("\n").as_str());
+        }
     }
     
     text
@@ -238,14 +242,65 @@ impl {}Prop {{
         let mut outputs: Vec<String> = Vec::new();
         let pattern = include_str!("type-pattern.rs");
         for class in table.classes.values() {
-            let mut output = pattern.to_string();
-            output = output.replace("PatternType", &id_to_token(&class.label));
-            output = output.replace("PatternDoc", &class.comment.replace('\n', "\n/// "));
-            output = multi_replace(output, &["multi_pattern_property", "MultiPatternProperty"], vec![vec![String::from("wip"), String::from("wop"), String::from("wup")], vec![String::from("zap"), String::from("zip"), String::from("zoup")]]);
-
             if PRIMITIVE_LC_TYPES.contains(&class.label.to_lowercase().as_str()) {
                 continue;
             }
+
+            let props = class.properties
+                .iter()
+                .filter_map(|prop| {
+                    let tmp = table.properties.get(&prop.id);
+                    if tmp.is_none() {
+                        println!("Property {} not found.", prop.id);
+                    }
+                    tmp
+                })
+                .collect::<Vec<_>>();
+            let parents = class.sub_classes
+                .iter()
+                .filter_map(|sub_class| {
+                    let tmp = table.classes.get(&sub_class.id);
+                    if tmp.is_none() {
+                        println!("Sub class {} not found.", sub_class.id);
+                    }
+                    tmp
+                })
+                .collect::<Vec<_>>();
+            let mut to_derive = Vec::new();
+            if cfg!(feature = "serde") {
+                to_derive.push(String::from("Serialize"));
+                to_derive.push(String::from("Deserialize"));
+            }
+
+            let mut output = pattern.to_string();
+            output = output.replace("PatternType", &id_to_token(&class.label));
+            output = output.replace("PatternDoc", &class.comment.replace('\n', "\n/// "));
+            output = multi_replace(output, &["PatternDerive"], vec![to_derive]);
+            output = multi_replace(
+                output,
+                &["pattern_property", "PatternProperty"],
+                vec![
+                    props.iter()
+                        .map(|prop| id_to_token(&prop.label).to_case(Case::Snake))
+                        .collect::<Vec<String>>(),
+                    props.iter()
+                        .map(|prop| id_to_token(&prop.label))
+                        .collect::<Vec<String>>(),
+                ]
+            );
+            output = multi_replace(
+                output,
+                &["pattern_parent", "PatternParent"],
+                vec![
+                    parents.iter()
+                        .map(|sub_class| id_to_token(&sub_class.label).to_case(Case::Snake))
+                        .collect::<Vec<String>>(),
+                    parents.iter()
+                        .map(|sub_class| id_to_token(&sub_class.label))
+                        .collect::<Vec<String>>(),
+                ]
+            );
+            
             let mut class_outuput = Self::header_with_doc(&class.comment);
             let class_name = id_to_token(&class.label);
             class_outuput += &format!("pub struct {} {{\n", class_name);
@@ -261,9 +316,7 @@ impl {}Prop {{
                 let txt = Id {
                     id: "schema:Text".to_string(),
                 };
-                if !range_include.contains(&txt) {
-                    range_include.insert(txt);
-                }
+                range_include.insert(txt);
                 let prop_type = id_to_token(&prop.label);
                 let arg_name = prop_type.to_case(Case::Snake);
                 props_init += &format!("        {}: Vec::new(),\n", arg_name);
