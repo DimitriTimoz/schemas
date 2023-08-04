@@ -145,9 +145,7 @@ impl ToWrite {
             let txt = Id {
                 id: "schema:Text".to_string(),
             };
-            if !range_include.contains(&txt) {
-                range_include.insert(txt);
-            }
+            range_include.insert(txt);
             match range_include.len() {
                 0 => {
                     println!("Property {} has no range inclDudes.", property.id);
@@ -182,9 +180,7 @@ impl ToWrite {
                             let txt = Id {
                                 id: "schema:Text".to_string(),
                             };
-                            if !range_include.contains(&txt) {
-                                range_include.insert(txt);
-                            }
+                            range_include.insert(txt);
                             let sub_prop_name = id_to_token(&sub_prop.label).to_case(Case::Snake);
                             sub_props_names.push(sub_prop_name.clone());
                             args += &format!(
@@ -242,6 +238,10 @@ impl {}Prop {{
         let mut types_variations = String::new();
         let mut outputs: Vec<String> = Vec::new();
         let pattern = include_str!("type-pattern.rs");
+        let prop_type_matcher_pattern = r#"match value {
+                Types::PatternPropVariant(value) => self.pattern_property.push(PatternPropertyProp::PatternPropVariant(value)),
+                _ => return Err(Error::InvalidType),
+            }"#;
         for class in table.classes.values() {
             if PRIMITIVE_LC_TYPES.contains(&class.label.to_lowercase().as_str()) {
                 continue;
@@ -279,14 +279,22 @@ impl {}Prop {{
             output = multi_replace(output, &["PatternDerive"], vec![to_derive]);
             output = multi_replace(
                 output,
-                &["pattern_prop_name_lc", "pattern_property", "PatternProperty"],
+                &["pattern_prop_name_lc", "pattern_property", "PatternProperty", "pattern_prop_type_matcher"],
                 vec![
                     props.iter().map(|prop| prop.label.to_lowercase()).collect(),
+                    props.iter().map(|prop| id_to_token(&prop.label).to_case(Case::Snake)).collect(),
+                    props.iter().map(|prop| id_to_token(&prop.label)).collect(),
                     props.iter()
-                        .map(|prop| id_to_token(&prop.label).to_case(Case::Snake))
-                        .collect(),
-                    props.iter()
-                        .map(|prop| id_to_token(&prop.label))
+                        .map(|prop| {
+                            let variants = prop.range_includes.iter()
+                                .map(|range| id_to_token(&range.id))
+                                .collect::<Vec<String>>();
+                            let mut matcher = prop_type_matcher_pattern.to_string();
+                            matcher = matcher.replace("PatternProperty", &id_to_token(&prop.label));
+                            matcher = matcher.replace("pattern_property", &id_to_token(&prop.label).to_case(Case::Snake));
+                            matcher = multi_replace(matcher, &["PatternPropVariant"], vec![variants]);
+                            matcher
+                        })
                         .collect(),
                 ]
             );

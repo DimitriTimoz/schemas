@@ -23,27 +23,23 @@ impl Schema for PatternType {
         || PatternParent::has_lc_property(name)
     }
 
-    fn add_lc_property(&mut self, name: &str, value: String) -> Result<(), Error> {
+    fn add_text_lc_property(&mut self, name: &str, text: String) -> Result<(), Error> {
         match name {
             "pattern_prop_name_lc" => self.pattern_property.push(PatternPropertyProp::Text(value)),
             _ => {
-                if PatternParent::has_lc_property(name) { return self.pattern_parent.add_property(name, value); }
+                if PatternParent::has_lc_property(name) { return self.pattern_parent.add_text_lc_property(name, value); }
                 return Err(Error::InvalidProperty);
             },
         }
         Ok(())
     }
 
-    fn add_lc_item(&mut self, name: &str, item: Types) -> Result<(), Error> {
+    fn add_lc_property(&mut self, name: &str, value: Types) -> Result<(), Error> {
         match name {
-            "" => match item {
-                Types::Date(date) => {
-                    Ok(())
-                }
-                _ => Err(Error::InvalidType),
-            },
+            "pattern_prop_name_lc" => pattern_prop_type_matcher,
             _ => {
-                {sub_class_test}
+                if PatternParent::has_lc_property(name) { return self.pattern_parent.add_lc_property(name, value); }
+                return Err(Error::InvalidProperty);
             },
         }
     }

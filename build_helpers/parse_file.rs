@@ -266,16 +266,20 @@ impl Table {
                     TxtValue::Txt(label) => label.to_string(),
                     TxtValue::Translation { value, .. } => value.to_string(),
                 };
-                let range_include = match &node.schema_range_includes {
+                let range_includes = match &node.schema_range_includes {
                     Some(RangeIncludes::Id(id)) => {
                         vec![id.clone()]
                     }
                     Some(RangeIncludes::Ids(ids)) => ids.to_vec(),
                     None => Vec::new(),
                 };
+                let mut range_includes: HashSet<Id> = range_includes.into_iter().collect();
+                range_includes.insert(Id {
+                    id: "schema:Text".to_string(),
+                });
 
                 // To know if an enum is required
-                if range_include.len() > 1 {
+                if range_includes.len() > 1 {
                     is_domain.insert(id.clone());
                 }
 
@@ -285,7 +289,7 @@ impl Table {
                         id,
                         comment: comment.clone(),
                         label: label.clone(),
-                        range_includes: range_include.into_iter().collect(),
+                        range_includes,
                         sub_properties: HashSet::new(),
                     },
                 );
