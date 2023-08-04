@@ -76,6 +76,45 @@ fn id_to_token(id: &str) -> String {
     token
 }
 
+fn multi_replace(mut text: String, patterns: &'static [&'static str], values: Vec<Vec<String>>) -> String {
+    assert!(!patterns.is_empty(), "Patterns and values must not be empty.");
+    assert!(patterns.len() == values.len(), "Patterns and values must have the same length.");
+    assert!(values.iter().all(|v| v.len() == values[0].len()), "Values must equal lenghts.");
+
+    let mut line_ranges = Vec::new();
+    for line in text.lines() {
+        let begin = line.as_ptr() as usize - text.as_ptr() as usize;
+        let end = begin + line.len();
+        line_ranges.push(begin..end);
+    }
+
+    for line in line_ranges.into_iter().rev() {
+        let mut is_to_be_replaced = false;
+        for pattern in patterns {
+            if text[line.clone()].contains(pattern) {
+                is_to_be_replaced = true;
+                break;
+            }
+        }
+        if !is_to_be_replaced {
+            continue;
+        }
+
+        let mut new_lines: Vec<String> = Vec::new();
+        for i in 0..values[0].len() {
+            let mut new_line = text[line.clone()].to_string();
+            for (pattern, values) in patterns.iter().zip(&values) {
+                new_line = new_line.replace(pattern, &values[i]);
+            }
+            new_lines.push(new_line);
+        }
+
+        text.replace_range(line.clone(), new_lines.join("\n").as_str());
+    }
+    
+    text
+}
+
 impl ToWrite {
     fn header_with_doc(doc: &str) -> String {
         let mut to_derive = vec!["Debug", "Clone"];
@@ -92,7 +131,7 @@ impl ToWrite {
 
     pub(crate) fn write_files(table: &mut Table) -> (String, String) {
         let mut props_output = String::new();
-        let mut classes_output: String = String::new();
+        let mut classes_output = String::new();
 
         // properties.rs
         for property in table.properties.values() {
@@ -196,7 +235,14 @@ impl {}Prop {{
 
         // types.rs
         let mut types_variations = String::new();
+        let mut outputs: Vec<String> = Vec::new();
+        let pattern = include_str!("type-pattern.rs");
         for class in table.classes.values() {
+            let mut output = pattern.to_string();
+            output = output.replace("PatternType", &id_to_token(&class.label));
+            output = output.replace("PatternDoc", &class.comment.replace('\n', "\n/// "));
+            output = multi_replace(output, &["multi_pattern_property", "MultiPatternProperty"], vec![vec![String::from("wip"), String::from("wop"), String::from("wup")], vec![String::from("zap"), String::from("zip"), String::from("zoup")]]);
+
             if PRIMITIVE_LC_TYPES.contains(&class.label.to_lowercase().as_str()) {
                 continue;
             }
@@ -364,7 +410,11 @@ impl {class_name}SubClasses {{
 
             class_outuput += &implementation;
             classes_output += &class_outuput;
+
+            outputs.push(output);
         }
+
+        std::fs::write("src/test.rs", outputs.join("\n\n\n")).expect("Unable to write file");
 
         // Enum of all types
         for primitive_type in PRIMITIVE_TYPES {
