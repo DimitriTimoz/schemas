@@ -221,8 +221,6 @@ impl Table {
         let mut same_name = HashMap::new();
         let mut special_type = HashMap::new();
 
-        let mut is_domain = HashSet::<String>::new();
-
         // Add all existing elements to the table
         for node in &schema.graph {
             let id = node.id.clone();
@@ -277,12 +275,7 @@ impl Table {
                 range_includes.insert(Id {
                     id: "schema:Text".to_string(),
                 });
-
-                // To know if an enum is required
-                if range_includes.len() > 1 {
-                    is_domain.insert(id.clone());
-                }
-
+                
                 properties.insert(
                     id.clone(),
                     PropertyDesc {

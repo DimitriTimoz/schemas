@@ -135,103 +135,22 @@ impl ToWrite {
     }
 
     pub(crate) fn write_files(table: &mut Table) -> (String, String) {
-        let mut props_output = String::new();
-        let mut classes_output = String::new();
+        let mut to_derive = Vec::new();
+        if cfg!(feature = "serde") {
+            to_derive.push(String::from("Serialize"));
+            to_derive.push(String::from("Deserialize"));
+        }
 
         // properties.rs
+        let pattern = include_str!("prop-pattern.rs");
+        let mut prop_outputs = Vec::new();
         for property in table.properties.values() {
-            let mut prop_output = Self::header_with_doc(&property.comment);
-            let mut range_include = property.range_includes.clone();
-            let txt = Id {
-                id: "schema:Text".to_string(),
-            };
-            range_include.insert(txt);
-            match range_include.len() {
-                0 => {
-                    println!("Property {} has no range inclDudes.", property.id);
-                    prop_output += &format!("pub struct {}Prop;\n", id_to_token(&property.label));
-
-                    // Impl of new()
-                    prop_output += &format!(
-                        "\nimpl {}Prop {{\n    pub fn new() -> Self {{\n        Self\n    }}\n}}\n\n",
-                        id_to_token(&property.label)
-                    );
-                }
-                1 => {
-                    // Struct
-                    let range = range_include
-                        .clone()
-                        .drain()
-                        .next()
-                        .expect("Range includes should have at least one element.");
-                    let args = if !property.sub_properties.is_empty() {
-                        let mut args = String::from("{\n");
-                        let mut sub_props_names: Vec<String> = Vec::new();
-                        for sub_prop in &property.sub_properties {
-                            let sub_prop =
-                                if let Some(sub_prop) = table.properties.get(&sub_prop.id) {
-                                    sub_prop
-                                } else {
-                                    println!("Sub property {} not found.", sub_prop.id);
-                                    continue;
-                                };
-
-                            let mut range_include = sub_prop.range_includes.clone();
-                            let txt = Id {
-                                id: "schema:Text".to_string(),
-                            };
-                            range_include.insert(txt);
-                            let sub_prop_name = id_to_token(&sub_prop.label).to_case(Case::Snake);
-                            sub_props_names.push(sub_prop_name.clone());
-                            args += &format!(
-                                "  pub {}: Vec<{}Prop>,\n",
-                                sub_prop_name,
-                                id_to_token(&sub_prop.label),
-                            );
-                        }
-                        args += "}\n";
-
-                        // Impl of new()
-                        let sub_props_names = sub_props_names
-                            .iter()
-                            .map(|s| s.to_string() + ": Vec::new()")
-                            .collect::<Vec<String>>();
-                        let sub_props_names = sub_props_names.join(",\n  ");
-                        args += &format!(
-                            r#"
-impl {}Prop {{
-    pub fn new() -> Self {{
-        Self {{
-            {}
-        }}    
-    }}
-}}"#,
-                            id_to_token(&property.label),
-                            sub_props_names,
-                        );
-                        args
-                    } else {
-                        format!("(pub {});\n", id_to_token(&range.id))
-                    };
-
-                    prop_output +=
-                        &format!("pub struct {}Prop {}\n", id_to_token(&property.label), args);
-                }
-                _ => {
-                    // Enum
-                    let label = &property.label;
-                    prop_output += &format!("pub enum {}Prop {{\n", id_to_token(label));
-                    for range in &range_include {
-                        prop_output += &format!(
-                            "    {}({}),\n",
-                            id_to_token(&range.id),
-                            id_to_token(&range.id)
-                        );
-                    }
-                    prop_output += "}\n\n";
-                }
-            }
-            props_output += &prop_output;
+            let mut output = pattern.to_string();
+            output = output.replace("PatternType", &id_to_token(&property.label));
+            output = output.replace("PatternDoc", &property.comment.replace('\n', "\n/// "));
+            output = output.replace("PatternDerive", &to_derive.join(", "));
+            output = multi_replace(output, &["PatternVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).collect()]);
+            prop_outputs.push(output);
         }
 
         // types.rs
@@ -267,16 +186,11 @@ impl {}Prop {{
                     tmp
                 })
                 .collect::<Vec<_>>();
-            let mut to_derive = Vec::new();
-            if cfg!(feature = "serde") {
-                to_derive.push(String::from("Serialize"));
-                to_derive.push(String::from("Deserialize"));
-            }
 
             let mut output = pattern.to_string();
             output = output.replace("PatternType", &id_to_token(&class.label));
             output = output.replace("PatternDoc", &class.comment.replace('\n', "\n/// "));
-            output = multi_replace(output, &["PatternDerive"], vec![to_derive]);
+            output = output.replace("PatternDerive", &to_derive.join(", "));
             output = multi_replace(
                 output,
                 &["pattern_prop_name_lc", "pattern_property", "PatternProperty", "pattern_prop_type_matcher"],
@@ -328,18 +242,6 @@ impl {}Prop {{
             }
             types_variants += &format!("   {}({}),\n", id_to_token(&ty.label), id_to_token(&ty.label));
         }
-
-        for (label, id) in &table.same_name {
-            let class = if let Some(class) = table.classes.get(id) {
-                class
-            } else {
-                println!("Class {} not found.", id);
-                continue;
-            };
-
-            classes_output += &format!("pub type {} = {};\n\n", label, &class.label);
-        }
-
         let mut to_derive = vec!["Debug", "Clone"];
         if cfg!(feature = "serde") {
             to_derive.push("Serialize");
@@ -351,9 +253,10 @@ impl {}Prop {{
             types_variants
         );
 
-        std::fs::write("src/test.rs", types_code).expect("Unable to write file");
+        std::fs::write("src/test.rs", types_code.clone()).expect("Unable to write file");
+        std::fs::write("src/test2.rs", prop_outputs.join("\n\n\n")).expect("Unable to write file");
 
 
-        (props_output, classes_output)
+        (prop_outputs.join("\n\n\n"), types_code)
     }
 }

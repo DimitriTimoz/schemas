@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 pub trait Schema {
     fn new() -> Self;
-    fn has_lc_property(name_lc: &str) -> bool { false }
+    fn has_lc_property(_name_lc: &str) -> bool { false }
     fn has_property(name: &str) -> bool {
         Self::has_lc_property(&name.to_lowercase())
     }

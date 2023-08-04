@@ -1,15 +1,11 @@
 /// PatternDoc
-#[derive(
-    Debug,
-    Clone,
-    Default,
-    PatternDerive,
-)]
+#[derive(Debug, Clone, Default, PatternDerive)]
 pub struct PatternType {
     pub pattern_property: Vec<PatternPropertyProp>,
     pub pattern_parent: PatternParent,
 }
 
+#[automatically_derived]
 impl Schema for PatternType {
     fn new() -> Self {
         Self::default()
