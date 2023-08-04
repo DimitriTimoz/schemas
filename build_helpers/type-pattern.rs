@@ -17,7 +17,7 @@ impl Schema for PatternType {
 
     fn add_property(&mut self, name: String, value: String) -> Result<(), Error> {
         match name.to_lowercase().as_str() {
-            "" => {},
+            "pattern_prop_name" => self.pattern_property.push(PatternPropertyProp::Text(value)),
             _ => return Err(Error::InvalidProperty),
         }
         Ok(())

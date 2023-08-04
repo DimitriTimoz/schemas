@@ -80,6 +80,7 @@ fn multi_replace(mut text: String, patterns: &'static [&'static str], values: Ve
     assert!(!patterns.is_empty(), "Patterns and values must not be empty.");
     assert!(patterns.len() == values.len(), "Patterns and values must have the same length.");
     assert!(values.iter().all(|v| v.len() == values[0].len()), "Values must equal lenghts.");
+    assert!(!patterns.iter().any(|pattern| patterns.iter().any(|other| other != pattern && other.contains(pattern))), "Patterns must not contain each other.");
 
     let mut line_ranges = Vec::new();
     for line in text.lines() {
@@ -278,14 +279,15 @@ impl {}Prop {{
             output = multi_replace(output, &["PatternDerive"], vec![to_derive]);
             output = multi_replace(
                 output,
-                &["pattern_property", "PatternProperty"],
+                &["pattern_prop_name", "pattern_property", "PatternProperty"],
                 vec![
+                    props.iter().map(|prop| prop.label.to_owned()).collect(),
                     props.iter()
                         .map(|prop| id_to_token(&prop.label).to_case(Case::Snake))
-                        .collect::<Vec<String>>(),
+                        .collect(),
                     props.iter()
                         .map(|prop| id_to_token(&prop.label))
-                        .collect::<Vec<String>>(),
+                        .collect(),
                 ]
             );
             output = multi_replace(
@@ -294,10 +296,10 @@ impl {}Prop {{
                 vec![
                     parents.iter()
                         .map(|sub_class| id_to_token(&sub_class.label).to_case(Case::Snake))
-                        .collect::<Vec<String>>(),
+                        .collect(),
                     parents.iter()
                         .map(|sub_class| id_to_token(&sub_class.label))
-                        .collect::<Vec<String>>(),
+                        .collect(),
                 ]
             );
             
