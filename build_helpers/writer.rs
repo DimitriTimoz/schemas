@@ -140,7 +140,7 @@ impl ToWrite {
         }
 
         // types.rs
-        let mut types_variants = String::new();
+        let mut types_variants = Vec::new();
         let mut outputs: Vec<String> = Vec::new();
         let pattern = include_str!("type-pattern.rs");
         let prop_type_matcher_pattern = r#"match value {
@@ -210,32 +210,31 @@ impl ToWrite {
                         .collect(),
                 ]
             );
-
+            
             outputs.push(output);
+
         }
         let mut types_code = outputs.join("\n\n");
 
         // Enum of all types
         for primitive_type in PRIMITIVE_TYPES {
             let primitive_type = id_to_token(primitive_type);
-            types_variants += &format!("   {}({}),\n", primitive_type, primitive_type);
+            types_variants.push(primitive_type.clone());
         }
         for ty in table.classes.values() {
             if PRIMITIVE_LC_TYPES.contains(&ty.label.to_lowercase().as_str()) {
                 continue;
             }
-            types_variants += &format!("   {}({}),\n", id_to_token(&ty.label), id_to_token(&ty.label));
+            types_variants.push(id_to_token(&ty.label));
         }
         let mut to_derive = vec!["Debug", "Clone"];
         if cfg!(feature = "serde") {
             to_derive.push("Serialize");
             to_derive.push("Deserialize");
         }
-        types_code += &format!(
-            "#[derive({})]\npub enum Types {{\n{}\n}}\n\n",
-            to_derive.join(", "),
-            types_variants
-        );
+        let mut code_types = include_str!("types-pattern.rs").to_string();
+        code_types = multi_replace(code_types,&["PatternVariant", "pattern_prop_name_lc"] , vec![types_variants.clone(), types_variants.iter().map(|v| v.to_lowercase()).collect()]);
+        types_code += code_types.as_str();
 
         // Debugging
         // std::fs::write("src/test.rs", types_code.clone()).expect("Unable to write file");
