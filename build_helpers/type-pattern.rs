@@ -6,7 +6,7 @@ pub struct PatternType {
 }
 
 #[automatically_derived]
-impl Schema for PatternType {
+impl PatternType {
     fn add_pattern_property(&mut self, value: impl Into<PatternPropertyProp>) { self.pattern_property.push(value.into()) }
 
     fn take_pattern_property(&mut self) -> Vec<PatternPropertyProp> { std::mem::take(&mut self.pattern_property) }
@@ -17,7 +17,7 @@ impl Schema for PatternType {
 
     fn clear_pattern_property(&mut self) { self.pattern_property.clear(); }
 
-    fn add_pattern_parent(&mut self, value: impl Into<PatternParent>) { self.pattern_parent.add_pattern_parent(value); }
+    fn set_pattern_parent(&mut self, value: impl Into<PatternParent>) { self.pattern_parent = value.into(); }
 }
 
 #[automatically_derived]
