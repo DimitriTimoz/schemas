@@ -29,3 +29,5 @@ impl Schema for PatternType {
         }
     }
 }
+
+impl AsRef<PatternParent> for PatternType { fn as_ref(&self) -> &PatternParent { &self.pattern_parent } }
