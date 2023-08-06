@@ -7,17 +7,17 @@ pub struct PatternType {
 
 #[automatically_derived]
 impl PatternType {
-    fn add_pattern_property(&mut self, value: impl Into<PatternPropertyProp>) { self.pattern_property.push(value.into()) }
+    pub fn add_pattern_property(&mut self, value: impl Into<PatternPropertyProp>) { self.pattern_property.push(value.into()) }
 
-    fn take_pattern_property(&mut self) -> Vec<PatternPropertyProp> { std::mem::take(&mut self.pattern_property) }
+    pub fn take_pattern_property(&mut self) -> Vec<PatternPropertyProp> { std::mem::take(&mut self.pattern_property) }
 
-    fn set_pattern_property(&mut self, value: impl Into<PatternPropertyProp>) { self.pattern_property = vec![value.into()]; }
+    pub fn set_pattern_property(&mut self, value: impl Into<PatternPropertyProp>) { self.pattern_property = vec![value.into()]; }
 
-    fn set_pattern_property_vec(&mut self, value: Vec<PatternPropertyProp>) { self.pattern_property = value; }
+    pub fn set_pattern_property_vec(&mut self, value: Vec<PatternPropertyProp>) { self.pattern_property = value; }
 
-    fn clear_pattern_property(&mut self) { self.pattern_property.clear(); }
+    pub fn clear_pattern_property(&mut self) { self.pattern_property.clear(); }
 
-    fn set_pattern_parent(&mut self, value: impl Into<PatternParent>) { self.pattern_parent = value.into(); }
+    pub fn set_pattern_parent(&mut self, value: impl Into<PatternParent>) { self.pattern_parent = value.into(); }
 }
 
 #[automatically_derived]
