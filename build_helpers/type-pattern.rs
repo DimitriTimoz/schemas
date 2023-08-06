@@ -17,7 +17,7 @@ impl PatternType {
 
     fn clear_pattern_property(&mut self) { self.pattern_property.clear(); }
 
-    fn add_pattern_parent(&mut self, value: impl Into<PatternParent>) { self.pattern_parent.add_pattern_parent(value); }
+    fn set_pattern_parent(&mut self, value: impl Into<PatternParent>) { self.pattern_parent = value.into(); }
 }
 
 #[automatically_derived]
