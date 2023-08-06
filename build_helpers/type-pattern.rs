@@ -6,7 +6,7 @@ pub struct PatternType {
 }
 
 #[automatically_derived]
-impl Schema for PatternType {
+impl PatternType {
     fn add_pattern_property(&mut self, value: impl Into<PatternPropertyProp>) { self.pattern_property.push(value.into()) }
 
     fn take_pattern_property(&mut self) -> Vec<PatternPropertyProp> { std::mem::take(&mut self.pattern_property) }
