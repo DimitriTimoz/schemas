@@ -227,13 +227,8 @@ impl ToWrite {
             }
             types_variants.push(id_to_token(&ty.label));
         }
-        let mut to_derive = vec!["Debug", "Clone"];
-        if cfg!(feature = "serde") {
-            to_derive.push("Serialize");
-            to_derive.push("Deserialize");
-        }
         let mut code_types = include_str!("types-pattern.rs").to_string();
-        code_types = multi_replace(code_types,&["PatternVariant", "pattern_prop_name_lc"] , vec![types_variants.clone(), types_variants.iter().map(|v| v.to_lowercase()).collect()]);
+        code_types = multi_replace(code_types, &["PatternVariant", "pattern_prop_name_lc"], vec![types_variants.clone(), types_variants.iter().map(|v| v.to_lowercase()).collect()]);
         types_code += code_types.as_str();
 
         // Debugging

@@ -1,5 +1,6 @@
 /// This enum contains all the types that can be used in a pattern.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Types {
     PatternVariant(PatternVariant),
 } 
