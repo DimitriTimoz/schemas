@@ -128,7 +128,7 @@ impl ToWrite {
         }
 
         // properties.rs
-        let pattern = include_str!("prop-pattern.rs");
+        let pattern = include_str!("patterns/prop.rs");
         let mut prop_outputs = Vec::new();
         for property in table.properties.values() {
             let mut output = pattern.to_string();
@@ -142,7 +142,7 @@ impl ToWrite {
         // types.rs
         let mut types_variants = Vec::new();
         let mut outputs: Vec<String> = Vec::new();
-        let pattern = include_str!("type-pattern.rs");
+        let pattern = include_str!("patterns/type.rs");
         let prop_type_matcher_pattern = r#"match value {
                 Types::PatternPropVariant(value) => self.pattern_property.push(PatternPropertyProp::PatternPropVariant(value)),
                 _ => return Err(Error::InvalidType),
@@ -227,7 +227,7 @@ impl ToWrite {
             }
             types_variants.push(id_to_token(&ty.label));
         }
-        let mut code_types = include_str!("types-pattern.rs").to_string();
+        let mut code_types = include_str!("patterns/types.rs").to_string();
         code_types = multi_replace(code_types, &["PatternVariant", "pattern_prop_name_lc"], vec![types_variants.clone(), types_variants.iter().map(|v| v.to_lowercase()).collect()]);
         types_code += code_types.as_str();
 
