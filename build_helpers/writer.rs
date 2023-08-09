@@ -231,6 +231,26 @@ impl ToWrite {
         code_types = multi_replace(code_types, &["PatternVariant", "pattern_prop_name_lc"], vec![types_variants.clone(), types_variants.iter().map(|v| v.to_lowercase()).collect()]);
         types_code += code_types.as_str();
 
+        // Features
+        let mut features = Vec::new();
+        for ty in table.classes.values() {
+            if PRIMITIVE_LC_TYPES.contains(&ty.label.to_lowercase().as_str()) {
+                continue;
+            }
+            let mut feature = String::from("pattern_name = [\n    \"pattern_prop_dependency_prop\",\n    \"pattern_dependency\",\n]");
+            feature = feature.replace("pattern_name", &ty.label.to_lowercase());
+            feature = multi_replace(feature, &["pattern_dependency"], vec![ty.sub_classes.iter().filter_map(|sub_class| table.classes.get(&sub_class.id)).map(|c| c.label.to_lowercase()).collect::<Vec<_>>()]);
+            feature = multi_replace(feature, &["pattern_prop_dependency"], vec![ty.properties.iter().filter_map(|prop| table.properties.get(&prop.id)).map(|p| p.label.to_lowercase()).collect::<Vec<_>>()]);
+            features.push(feature);
+        }
+        for prop in table.properties.values() {
+            let mut feature = String::from("pattern_name_prop = [\n    \"pattern_dependency\",\n]");
+            feature = feature.replace("pattern_name", &prop.label.to_lowercase());
+            feature = multi_replace(feature, &["pattern_dependency"], vec![prop.range_includes.iter().filter_map(|range| table.classes.get(&range.id)).map(|c| c.label.to_lowercase()).collect::<Vec<_>>()]);
+            features.push(feature);
+        }
+        std::fs::write("src/features", features.join("\n\n")).expect("Unable to write file");
+
         // Debugging
         // std::fs::write("src/test.rs", types_code.clone()).expect("Unable to write file");
         // std::fs::write("src/test2.rs", prop_outputs.join("\n\n\n")).expect("Unable to write file");
