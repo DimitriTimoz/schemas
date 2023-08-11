@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::writer::PRIMITIVE_TYPES;
+use crate::writer::{PRIMITIVE_TYPES, id_to_token};
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Root {
@@ -200,6 +200,12 @@ pub(crate) struct PropertyDesc {
     pub(crate) sub_properties: HashSet<Id>, // Sous propriétés
 }
 
+impl PropertyDesc {
+    pub(crate) fn feature_name(&self) -> String {
+        format!("{}Prop", id_to_token(&self.label))
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct ClassDesc {
     pub(crate) label: String, // Name of the class PascalCase
@@ -209,10 +215,14 @@ pub(crate) struct ClassDesc {
 }
 
 impl ClassDesc {
+    pub(crate) fn feature_name(&self) -> String {
+        id_to_token(&self.label)
+    }
+
     pub(crate) fn cfg_feature(&self) -> String {
         match PRIMITIVE_TYPES.contains(&self.label.as_str()) {
             true => String::from("all()"),
-            false => format!("feature = \"{}\"", self.label.to_lowercase()),
+            false => format!("feature = \"{}\"", self.feature_name()),
         }
     }
 }
