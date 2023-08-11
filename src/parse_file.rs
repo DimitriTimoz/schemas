@@ -200,7 +200,15 @@ pub(crate) struct PropertyDesc {
     pub(crate) sub_properties: HashSet<Id>, // Sous propriétés
 }
 
+fn into_doc(source: &str) -> String {
+    source.replace("[[", "[").replace("]]", "]").replace("\\n", "\n").replace('\n', "\n/// ")
+}
+
 impl PropertyDesc {
+    pub(crate) fn doc(&self) -> String {
+        into_doc(&self.comment)
+    }
+    
     pub(crate) fn feature_name(&self) -> String {
         format!("{}Prop", id_to_token(&self.label))
     }
@@ -215,6 +223,10 @@ pub(crate) struct ClassDesc {
 }
 
 impl ClassDesc {
+    pub(crate) fn doc(&self) -> String {
+        into_doc(&self.comment)
+    }
+
     pub(crate) fn feature_name(&self) -> String {
         id_to_token(&self.label)
     }

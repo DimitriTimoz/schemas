@@ -133,7 +133,7 @@ impl ToWrite {
         let mut prop_outputs = Vec::new();
         for property in table.properties.values() {
             let mut output = pattern.to_string();
-            let doc = property.comment.replace('\n', "\n/// ");
+            let doc = property.doc();
             let variants = property
                 .range_includes
                 .iter()
@@ -208,7 +208,7 @@ impl ToWrite {
 
             let mut output = pattern.to_string();
             output = output.replace("PatternType", &id_to_token(&class.label));
-            output = output.replace("PatternDoc", &class.comment.replace('\n', "\n/// "));
+            output = output.replace("PatternDoc", &class.doc());
             output = output.replace("PatternDerive", &to_derive.join(", "));
             output = output.replace("pattern_feature", &class.feature_name());
             output = multi_replace(
