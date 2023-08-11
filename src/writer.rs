@@ -162,14 +162,7 @@ impl ToWrite {
             output = output.replace("PatternDoc", &doc);
             output = output.replace("PatternDerive", &to_derive.join(", "));
             output = output.replace("pattern_feature", &property.feature_name());
-            output = multi_replace(
-                output,
-                &["pattern_variant_feature", "PatternVariant"],
-                vec![
-                    variants.iter().map(|id| table.classes.get(&id.to_string()).unwrap().cfg_feature()).collect(),
-                    property.range_includes.iter().map(|range| id_to_token(&range.id)).collect()
-                ]
-            );
+            output = multi_replace(output, &["PatternVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).collect()]);
             prop_outputs.push(output);
         }
 
