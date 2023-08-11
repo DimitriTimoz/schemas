@@ -1,11 +1,13 @@
 /// PatternDoc
 #[derive(Debug, Clone, Default, PatternDerive)]
+#[cfg(feature = "pattern_feature")]
 pub struct PatternType {
     pub pattern_property: Vec<PatternPropertyProp>,
     pub pattern_parent: PatternParent,
 }
 
 #[automatically_derived]
+#[cfg(feature = "pattern_feature")]
 impl PatternType {
     pub fn add_pattern_property(&mut self, value: impl Into<PatternPropertyProp>) { self.pattern_property.push(value.into()) }
 
@@ -21,6 +23,7 @@ impl PatternType {
 }
 
 #[automatically_derived]
+#[cfg(feature = "pattern_feature")]
 impl Schema for PatternType {
     fn new() -> Self {
         Self::default()

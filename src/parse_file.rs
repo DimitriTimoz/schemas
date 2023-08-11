@@ -47,6 +47,12 @@ pub(crate) struct Id {
     pub(crate) id: String,
 }
 
+impl std::fmt::Display for Id {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.id)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub(crate) enum RangeIncludes {
@@ -379,6 +385,7 @@ impl Table {
                 special_type.insert(id.to_string(), label);
             }
         }
+
         Self {
             classes,
             properties,
