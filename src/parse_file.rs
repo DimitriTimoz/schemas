@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
+
+use crate::writer::{PRIMITIVE_TYPES, id_to_token};
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Root {
@@ -45,6 +47,12 @@ pub(crate) struct Context {
 pub(crate) struct Id {
     #[serde(rename = "@id")]
     pub(crate) id: String,
+}
+
+impl std::fmt::Display for Id {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.id)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -192,12 +200,43 @@ pub(crate) struct PropertyDesc {
     pub(crate) sub_properties: HashSet<Id>, // Sous propriétés
 }
 
+fn into_doc(source: &str) -> String {
+    source.replace("[[", "[").replace("]]", "]").replace("\\n", "\n").replace('\n', "\n/// ")
+}
+
+impl PropertyDesc {
+    pub(crate) fn doc(&self) -> String {
+        into_doc(&self.comment)
+    }
+    
+    pub(crate) fn feature_name(&self) -> String {
+        format!("{}Prop", id_to_token(&self.label))
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct ClassDesc {
     pub(crate) label: String, // Name of the class PascalCase
     pub(crate) comment: String,
     pub(crate) sub_classes: HashSet<Id>,
     pub(crate) properties: HashSet<Id>, // Properties of the class
+}
+
+impl ClassDesc {
+    pub(crate) fn doc(&self) -> String {
+        into_doc(&self.comment)
+    }
+
+    pub(crate) fn feature_name(&self) -> String {
+        id_to_token(&self.label)
+    }
+
+    pub(crate) fn cfg_feature(&self) -> String {
+        match PRIMITIVE_TYPES.contains(&self.label.as_str()) {
+            true => String::from("all()"),
+            false => format!("feature = \"{}\"", self.feature_name()),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -379,6 +418,31 @@ impl Table {
                 special_type.insert(id.to_string(), label);
             }
         }
+
+        for primitive in crate::writer::PRIMITIVE_TYPES {
+            classes.insert(
+                format!("schema:{}", primitive),
+                ClassDesc {
+                    comment: format!("Primitive type {}", primitive),
+                    label: primitive.to_string(),
+                    sub_classes: HashSet::new(),
+                    properties: HashSet::new(),
+                },
+            );
+        }
+
+        // Replace all URL by Url
+        for class in classes.values_mut() {
+            if class.properties.remove(&Id { id: "schema:URL".to_string() }) {
+                class.properties.insert(Id { id: "schema:Url".to_string() });
+            }
+        }
+        for property in properties.values_mut() {
+            if property.range_includes.remove(&Id { id: "schema:URL".to_string() }) {
+                property.range_includes.insert(Id { id: "schema:Url".to_string() });
+            }
+        }
+
         Self {
             classes,
             properties,

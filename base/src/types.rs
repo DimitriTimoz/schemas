@@ -151,21 +151,21 @@ impl Schema for DateTime {
 
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct URL(Text);
+pub struct Url(Text);
 
-impl From<String> for URL {
+impl From<String> for Url {
     fn from(text: String) -> Self {
         Self(Text(text))
     }
 }
 
-impl From<&str> for URL {
+impl From<&str> for Url {
     fn from(text: &str) -> Self {
         Self(Text(text.to_string()))
     }
 }
 
-impl Schema for URL {
+impl Schema for Url {
     fn new() -> Self {
         Self(Text::new())
     }
@@ -173,7 +173,7 @@ impl Schema for URL {
     fn add_lc_property(&mut self, name: &str, value: Types) -> Result<(), Error> {
         match name {
             "url" => match value {
-                Types::URL(url) => {
+                Types::Url(url) => {
                     self.0 = url.0;
                     Ok(())
                 }
@@ -259,4 +259,5 @@ impl Schema for CssSelectorType {
     }
 }
 
-include!(concat!(env!("OUT_DIR"), "/types.rs"));
+include!("classes_gen.rs");
+include!("types_gen.rs");
