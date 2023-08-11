@@ -152,11 +152,6 @@ impl ToWrite {
                 prop_outputs.push(format!("/// {doc}\n#[cfg(feature = \"{}\")] pub type {}Prop = TextOnlyProp;", property.feature_name(), id_to_token(&property.label)));
                 continue;
             }
-            if variants.len() == 2 && variants.iter().any(|id| id.id.to_lowercase() == "schema:text") {
-                let other = variants.iter().find(|id| id.id.to_lowercase() != "schema:text").unwrap();
-                prop_outputs.push(format!("/// {doc}\n#[cfg(feature = \"{}\")] pub type {}Prop = SimpleProp<{}>;", property.feature_name(), id_to_token(&property.label), id_to_token(&other.to_string())));
-                continue;
-            }
 
             output = output.replace("PatternType", &id_to_token(&property.label));
             output = output.replace("PatternDoc", &doc);
