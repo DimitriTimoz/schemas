@@ -1,8 +1,8 @@
 /// PatternDoc
 #[derive(Debug, Clone, PatternDerive)]
-#[cfg(feature = "pattern_feature")]
+#[cfg(feature = "pattern_feature_prop")]
 pub enum PatternTypeProp {
-    #[cfg(feature = "pattern_variant_feature")] PatternVariant(PatternVariant),
+    #[cfg(pattern_variant_feature)] PatternVariant(PatternVariant),
 }
 
-#[automatically_derived] #[cfg(feature = "pattern_variant_feature")] impl From<PatternVariant> for PatternTypeProp { fn from(value: PatternVariant) -> Self { Self::PatternVariant(value) } }
+#[automatically_derived] #[cfg(all(pattern_variant_feature, feature = "pattern_feature_prop"))] impl From<PatternVariant> for PatternTypeProp { fn from(value: PatternVariant) -> Self { Self::PatternVariant(value) } }

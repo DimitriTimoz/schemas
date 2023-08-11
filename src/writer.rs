@@ -11,14 +11,14 @@ const TO_REPLACE: [[&str; 2]; 6] = [
     ["Option", "OptionType"],
     ["PriceRange", "PriceRangeType"],
 ];
-const PRIMITIVE_TYPES: [&str; 10] = [
+pub const PRIMITIVE_TYPES: [&str; 10] = [
     "Text",
     "Number",
     "Integer",
     "Boolean",
     "Date",
     "DateTime",
-    "URL",
+    "Url",
     "Time",
     "XPathType",
     "CssSelectorType",
@@ -75,6 +75,7 @@ fn id_to_token(id: &str) -> String {
     token
 }
 
+#[track_caller]
 fn multi_replace(mut text: String, patterns: &'static [&'static str], values: Vec<Vec<String>>) -> String {
     assert!(!patterns.is_empty(), "Patterns and values must not be empty.");
     assert!(patterns.len() == values.len(), "Patterns and values must have the same length.");
@@ -132,6 +133,17 @@ impl ToWrite {
         let mut prop_outputs = Vec::new();
         for property in table.properties.values() {
             let mut output = pattern.to_string();
+            let variants = property
+                .range_includes
+                .iter()
+                .filter(|id| {
+                    let tmp = table.classes.contains_key(&id.to_string());
+                    if !tmp {
+                        println!("Warning: {id} not found in classes.");
+                    }
+                    tmp
+                })
+                .collect::<Vec<_>>();
             output = output.replace("PatternType", &id_to_token(&property.label));
             output = output.replace("PatternDoc", &property.comment.replace('\n', "\n/// "));
             output = output.replace("PatternDerive", &to_derive.join(", "));
@@ -140,9 +152,7 @@ impl ToWrite {
                 output,
                 &["pattern_variant_feature", "PatternVariant"],
                 vec![
-                    property.range_includes.iter().map(|id| 
-                        table.classes.get(&id.to_string()).map(|v| v.label.to_lowercase()).unwrap_or(String::from("required"))
-                    ).collect(),
+                    variants.iter().map(|id| table.classes.get(&id.to_string()).unwrap().cfg_feature()).collect(),
                     property.range_includes.iter().map(|range| id_to_token(&range.id)).collect()
                 ]
             );
@@ -151,7 +161,7 @@ impl ToWrite {
 
         // types.rs
         let mut outputs: Vec<String> = Vec::new();
-        let pattern = include_str!("patterns/type.rs");
+        let pattern = include_str!("patterns/class.rs");
         let prop_type_matcher_pattern = r#"match value {
                 Types::PatternPropVariant(value) => self.pattern_property.push(PatternPropertyProp::PatternPropVariant(value)),
                 _ => return Err(Error::InvalidType),
@@ -252,14 +262,16 @@ impl ToWrite {
             }
             let mut feature = String::from("pattern_name = [\n    \"pattern_prop_dependency_prop\",\n    \"pattern_dependency\",\n]");
             feature = feature.replace("pattern_name", &ty.label.to_lowercase());
-            feature = multi_replace(feature, &["pattern_dependency"], vec![ty.sub_classes.iter().filter_map(|sub_class| table.classes.get(&sub_class.id)).map(|c| c.label.to_lowercase()).collect::<Vec<_>>()]);
+            feature = multi_replace(feature, &["pattern_dependency"], vec![ty.sub_classes.iter().filter_map(|sub_class| table.classes.get(&sub_class.id)).map(|c| c.label.to_lowercase()).filter(|l| !PRIMITIVE_LC_TYPES.contains(&l.as_str())).collect::<Vec<_>>()]);
             feature = multi_replace(feature, &["pattern_prop_dependency"], vec![ty.properties.iter().filter_map(|prop| table.properties.get(&prop.id)).map(|p| p.label.to_lowercase()).collect::<Vec<_>>()]);
             features.push(feature);
         }
         for prop in table.properties.values() {
             let mut feature = String::from("pattern_name_prop = [\n    \"pattern_dependency\",\n]");
             feature = feature.replace("pattern_name", &prop.label.to_lowercase());
-            feature = multi_replace(feature, &["pattern_dependency"], vec![prop.range_includes.iter().filter_map(|range| table.classes.get(&range.id)).map(|c| c.label.to_lowercase()).collect::<Vec<_>>()]);
+            feature = multi_replace(feature, &["pattern_dependency"], vec![
+                prop.range_includes.iter().filter_map(|range| table.classes.get(&range.id)).map(|c| c.label.to_lowercase()).filter(|l| !PRIMITIVE_LC_TYPES.contains(&l.as_str())).collect::<Vec<_>>()
+            ]);
             features.push(feature);
         }
 

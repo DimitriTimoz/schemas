@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
+
+use crate::writer::PRIMITIVE_TYPES;
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Root {
@@ -206,6 +208,15 @@ pub(crate) struct ClassDesc {
     pub(crate) properties: HashSet<Id>, // Properties of the class
 }
 
+impl ClassDesc {
+    pub(crate) fn cfg_feature(&self) -> String {
+        match PRIMITIVE_TYPES.contains(&self.label.as_str()) {
+            true => String::from("all()"),
+            false => format!("feature = \"{}\"", self.label.to_lowercase()),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct SpecialTypeDesc {
     pub(crate) label: String, // Name of the class PascalCase
@@ -383,6 +394,30 @@ impl Table {
                     TxtValue::Translation { value, .. } => value.to_string(),
                 };
                 special_type.insert(id.to_string(), label);
+            }
+        }
+
+        for primitive in crate::writer::PRIMITIVE_TYPES {
+            classes.insert(
+                format!("schema:{}", primitive),
+                ClassDesc {
+                    comment: format!("Primitive type {}", primitive),
+                    label: primitive.to_string(),
+                    sub_classes: HashSet::new(),
+                    properties: HashSet::new(),
+                },
+            );
+        }
+
+        // Replace all URL by Url
+        for class in classes.values_mut() {
+            if class.properties.remove(&Id { id: "schema:URL".to_string() }) {
+                class.properties.insert(Id { id: "schema:Url".to_string() });
+            }
+        }
+        for property in properties.values_mut() {
+            if property.range_includes.remove(&Id { id: "schema:URL".to_string() }) {
+                property.range_includes.insert(Id { id: "schema:Url".to_string() });
             }
         }
 
