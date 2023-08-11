@@ -120,7 +120,7 @@ fn multi_replace(mut text: String, patterns: &'static [&'static str], values: Ve
 }
 
 impl ToWrite {
-    pub(crate) fn write_files(table: &mut Table) -> (String, String) {
+    pub(crate) fn write_files(table: &mut Table) -> (String, String, String) {
         let mut to_derive = Vec::new();
         if cfg!(feature = "serde") {
             to_derive.push(String::from("Serialize"));
@@ -249,12 +249,7 @@ impl ToWrite {
             feature = multi_replace(feature, &["pattern_dependency"], vec![prop.range_includes.iter().filter_map(|range| table.classes.get(&range.id)).map(|c| c.label.to_lowercase()).collect::<Vec<_>>()]);
             features.push(feature);
         }
-        std::fs::write("src/features", features.join("\n\n")).expect("Unable to write file");
 
-        // Debugging
-        // std::fs::write("src/test.rs", types_code.clone()).expect("Unable to write file");
-        // std::fs::write("src/test2.rs", prop_outputs.join("\n\n\n")).expect("Unable to write file");
-
-        (prop_outputs.join("\n\n"), types_code)
+        (prop_outputs.join("\n\n"), types_code, features.join("\n"))
     }
 }
