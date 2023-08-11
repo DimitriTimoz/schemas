@@ -1,6 +1,6 @@
 [package]
 name = "schemas"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 authors = ["Timoz Dimitri <dimitri.timoz@protonmail.com>", "Mubelotix <mubelotix@gmail.com>"]
 description = "A Rust library for working with Schema.org data"
