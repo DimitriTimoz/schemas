@@ -133,6 +133,7 @@ impl ToWrite {
         let mut prop_outputs = Vec::new();
         for property in table.properties.values() {
             let mut output = pattern.to_string();
+            let doc = property.comment.replace('\n', "\n/// ");
             let variants = property
                 .range_includes
                 .iter()
@@ -145,13 +146,20 @@ impl ToWrite {
                 })
                 .collect::<Vec<_>>();
 
+            
+
             if variants.len() == 1 && variants[0].id.to_lowercase() == "schema:text" {
-                prop_outputs.push(format!("pub type {}Prop = TextOnlyProp;", id_to_token(&property.label)));
+                prop_outputs.push(format!("/// {doc}\n#[cfg(feature = \"{}_prop\")] pub type {}Prop = TextOnlyProp;", property.label.to_lowercase(), id_to_token(&property.label)));
+                continue;
+            }
+            if variants.len() == 2 && variants.iter().any(|id| id.id.to_lowercase() == "schema:text") {
+                let other = variants.iter().find(|id| id.id.to_lowercase() != "schema:text").unwrap();
+                prop_outputs.push(format!("/// {doc}\n#[cfg(feature = \"{}_prop\")] pub type {}Prop = SimpleProp<{}>;", property.label.to_lowercase(), id_to_token(&property.label), id_to_token(&other.to_string())));
                 continue;
             }
 
             output = output.replace("PatternType", &id_to_token(&property.label));
-            output = output.replace("PatternDoc", &property.comment.replace('\n', "\n/// "));
+            output = output.replace("PatternDoc", &doc);
             output = output.replace("PatternDerive", &to_derive.join(", "));
             output = output.replace("pattern_feature", &property.label.to_lowercase());
             output = multi_replace(
@@ -169,7 +177,7 @@ impl ToWrite {
         let mut outputs: Vec<String> = Vec::new();
         let pattern = include_str!("patterns/class.rs");
         let prop_type_matcher_pattern = r#"match value {
-                Types::PatternPropVariant(value) => self.pattern_property.push(PatternPropertyProp::PatternPropVariant(value)),
+                Types::PatternPropVariant(value) => self.pattern_property.push(PatternPropertyProp::from(value)),
                 _ => return Err(Error::InvalidType),
             }"#;
         for class in table.classes.values() {
