@@ -144,6 +144,12 @@ impl ToWrite {
                     tmp
                 })
                 .collect::<Vec<_>>();
+
+            if variants.len() == 1 && variants[0].id.to_lowercase() == "schema:text" {
+                prop_outputs.push(format!("pub type {}Prop = TextOnlyProp;", id_to_token(&property.label)));
+                continue;
+            }
+
             output = output.replace("PatternType", &id_to_token(&property.label));
             output = output.replace("PatternDoc", &property.comment.replace('\n', "\n/// "));
             output = output.replace("PatternDerive", &to_derive.join(", "));
