@@ -4,3 +4,4 @@ pub mod properties;
 pub mod traits;
 pub mod types;
 pub mod classes;
+pub mod value;

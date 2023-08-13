@@ -36,6 +36,20 @@ const PRIMITIVE_LC_TYPES: [&str; 10] = [
     "xpathtype",
     "cssselectortype",
 ];
+
+const PRIMITIVE_TYPE_INNER: [&str; 10] = [
+    "String",
+    "f64",
+    "i64",
+    "bool",
+    "String",
+    "String",
+    "String",
+    "String",
+    "String",
+    "String",
+];
+
 const DIGITS: [&str; 10] = [
     "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
 ];
@@ -55,7 +69,7 @@ pub fn id_to_token(id: &str) -> String {
         }
     }
 
-    let token: String = token_vec.into_iter().collect();
+    let mut token: String = token_vec.into_iter().collect();
     // Replace first char if it's a digit
     if !token.is_empty()
         && token
@@ -72,7 +86,21 @@ pub fn id_to_token(id: &str) -> String {
             .unwrap() as usize;
         return DIGITS[digit].to_string() + &token[1..];
     }
+
     token
+}
+
+pub fn id_to_inner(id: &str) -> String {
+    let token = id_to_token(id);
+
+    let primitive_idx = PRIMITIVE_LC_TYPES
+        .iter()
+        .position(|primitive| primitive == &token.to_lowercase());
+    if let Some(idx) = primitive_idx {
+        PRIMITIVE_TYPE_INNER[idx].to_string()
+    } else {
+        token
+    }
 }
 
 #[track_caller]
@@ -145,9 +173,7 @@ impl ToWrite {
                     tmp
                 })
                 .collect::<Vec<_>>();
-
             
-
             if variants.len() == 1 && variants[0].id.to_lowercase() == "schema:text" {
                 prop_outputs.push(format!("/// {doc}\n#[cfg(feature = \"{}\")] pub type {}Prop = TextOnlyProp;", property.feature_name(), id_to_token(&property.label)));
                 continue;
@@ -157,7 +183,9 @@ impl ToWrite {
             output = output.replace("PatternDoc", &doc);
             output = output.replace("PatternDerive", &to_derive.join(", "));
             output = output.replace("pattern_feature", &property.feature_name());
-            output = multi_replace(output, &["PatternVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).collect()]);
+            output = multi_replace(output, &["PatternVariant", "PatternInnerVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).collect(), property.range_includes.iter().map(|range| id_to_inner(&range.id)).collect()]);
+            output = multi_replace(output, &["PatternPrimitiveVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).collect()]);
+            output = multi_replace(output, &["PatternObjectVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| !PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).collect()]);
             prop_outputs.push(output);
         }
 
