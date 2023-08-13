@@ -6,8 +6,6 @@ pub enum PatternTypeProp {
     PatternVariant(PatternInnerVariant),
 }
 
-#[automatically_derived] #[cfg(feature = "pattern_feature")] impl From<PatternVariant> for PatternTypeProp { fn from(value: PatternVariant) -> Self { Self::PatternVariant(value) } }
-
 #[automatically_derived]
 #[cfg(feature = "pattern_feature")]
 impl TryFrom<SchemaValue> for RepresentativeOfPageProp {

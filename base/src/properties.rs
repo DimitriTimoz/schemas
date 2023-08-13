@@ -1,6 +1,4 @@
-use crate::types::*;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use crate::prelude::*;
 
 /// A property whose only value is Text
 #[derive(Debug, Clone)]
