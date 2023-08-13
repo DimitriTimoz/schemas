@@ -156,17 +156,6 @@ impl ToWrite {
         for property in table.properties.values() {
             let mut output = pattern.to_string();
             let doc = property.doc();
-            let variants = property
-                .range_includes
-                .iter()
-                .filter(|id| {
-                    let tmp = table.classes.contains_key(&id.to_string());
-                    if !tmp {
-                        println!("Warning: {id} not found in classes.");
-                    }
-                    tmp
-                })
-                .collect::<Vec<_>>();
 
             output = output.replace("PatternType", &id_to_token(&property.label));
             output = output.replace("PatternDoc", &doc);
@@ -195,16 +184,26 @@ impl ToWrite {
                     tmp
                 })
                 .collect::<Vec<_>>();
-            let parents = class.sub_classes
-                .iter()
-                .filter_map(|sub_class| {
-                    let tmp = table.classes.get(&sub_class.id);
-                    if tmp.is_none() {
-                        println!("Sub class {} not found.", sub_class.id);
-                    }
-                    tmp
-                })
-                .collect::<Vec<_>>();
+        
+            let mut parents = vec![class];
+            loop {
+                let start_len = parents.len();
+                for parent in parents.clone() {
+                    parents.extend(parent.sub_classes.iter().filter_map(|sub_class| {
+                        let tmp = table.classes.get(&sub_class.id);
+                        if tmp.is_none() {
+                            println!("Sub class {} not found.", sub_class.id);
+                        }
+                        tmp
+                    }));
+                }
+                parents.sort_by_key(|class| &class.label);
+                parents.dedup_by_key(|class| &class.label);
+                if parents.len() == start_len {
+                    break;
+                }
+            }
+            parents.remove(0);
 
             let mut output = pattern.to_string();
             output = output.replace("PatternType", &id_to_token(&class.label));
@@ -221,18 +220,7 @@ impl ToWrite {
                     props.iter().map(|prop| prop.feature_name()).collect(),
                 ]
             );
-            output = multi_replace(
-                output,
-                &["pattern_parent", "PatternParent"],
-                vec![
-                    parents.iter()
-                        .map(|sub_class| id_to_token(&sub_class.label).to_case(Case::Snake))
-                        .collect(),
-                    parents.iter()
-                        .map(|sub_class| id_to_token(&sub_class.label))
-                        .collect(),
-                ]
-            );
+            output = multi_replace(output, &["PatternParent"], vec![parents.iter().map(|sub_class| id_to_token(&sub_class.label)).collect()]);
             
             outputs.push(output);
 

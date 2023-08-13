@@ -1,4 +1,10 @@
 /// PatternDoc
+/// 
+/// Contains the following properties (enable them for helper accessors):
+/// - `pattern_property` ([PatternPropertyProp])
+/// 
+/// Descends from the following classes (enable them for conversion traits):
+/// - [`PatternParent`]
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg(feature = "pattern_feature")]
