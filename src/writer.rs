@@ -222,23 +222,12 @@ impl ToWrite {
             output = output.replace("pattern_ty_lc", &class.label.to_lowercase());
             output = multi_replace(
                 output,
-                &["pattern_prop_ty_lc", "pattern_property", "PatternProperty", "pattern_prop_type_matcher"],
+                &["pattern_prop_ty_lc", "pattern_property", "PatternProperty", "pattern_prop_feature"],
                 vec![
                     props.iter().map(|prop| prop.label.to_lowercase()).collect(),
                     props.iter().map(|prop| id_to_token(&prop.label).to_case(Case::Snake)).collect(),
                     props.iter().map(|prop| id_to_token(&prop.label)).collect(),
-                    props.iter()
-                        .map(|prop| {
-                            let variants = prop.range_includes.iter()
-                                .map(|range| id_to_token(&range.id))
-                                .collect::<Vec<String>>();
-                            let mut matcher = prop_type_matcher_pattern.to_string();
-                            matcher = matcher.replace("PatternProperty", &id_to_token(&prop.label));
-                            matcher = matcher.replace("pattern_property", &id_to_token(&prop.label).to_case(Case::Snake));
-                            matcher = multi_replace(matcher, &["PatternPropVariant"], vec![variants]);
-                            matcher
-                        })
-                        .collect(),
+                    props.iter().map(|prop| prop.feature_name()).collect(),
                 ]
             );
             output = multi_replace(
@@ -283,10 +272,8 @@ impl ToWrite {
             if PRIMITIVE_LC_TYPES.contains(&ty.label.to_lowercase().as_str()) {
                 continue;
             }
-            let mut feature = String::from("pattern_name = [\n    \"pattern_prop_dependency\",\n    \"pattern_dependency\",\n]");
+            let mut feature = String::from("pattern_name = []");
             feature = feature.replace("pattern_name", &ty.feature_name());
-            feature = multi_replace(feature, &["pattern_dependency"], vec![ty.sub_classes.iter().filter_map(|sub_class| table.classes.get(&sub_class.id)).filter(|p| !PRIMITIVE_LC_TYPES.contains(&p.label.to_lowercase().as_str())).map(|c| c.feature_name()).collect::<Vec<_>>()]);
-            feature = multi_replace(feature, &["pattern_prop_dependency"], vec![ty.properties.iter().filter_map(|prop| table.properties.get(&prop.id)).map(|p| p.feature_name()).collect::<Vec<_>>()]);
             features.push(feature);
         }
         for prop in table.properties.values() {

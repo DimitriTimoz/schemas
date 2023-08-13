@@ -25,11 +25,11 @@ impl PatternType {
         self.take_property_lc(&name.to_lowercase())
     }
 
-    pub fn pattern_property(&self) -> Option<PatternProperty> { for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {return Some(prop);}}None }
+    #[cfg(feature = "pattern_prop_feature")] pub fn pattern_property(&self) -> Option<PatternProperty> { for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {return Some(prop);}}None }
     
-    pub fn take_pattern_property(&mut self) -> Option<Vec<PatternProperty>> { self.take_property("pattern_prop_ty_lc").map(|values| {values.into_iter().filter_map(|value| value.try_into().ok()).collect()}) }
+    #[cfg(feature = "pattern_prop_feature")] pub fn take_pattern_property(&mut self) -> Option<Vec<PatternProperty>> { self.take_property("pattern_prop_ty_lc").map(|values| {values.into_iter().filter_map(|value| value.try_into().ok()).collect()}) }
     
-    pub fn pattern_property_vec(&self) -> Vec<PatternProperty> { let mut vec = Vec::new();for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {vec.push(prop);}}vec }
+    #[cfg(feature = "pattern_prop_feature")] pub fn pattern_property_vec(&self) -> Vec<PatternProperty> { let mut vec = Vec::new();for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {vec.push(prop);}}vec }
 }
 
 #[automatically_derived]
