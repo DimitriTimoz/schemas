@@ -29,7 +29,7 @@ impl Types {
             "time" => Some(Self::Time(Time::new())),
             "xpathtype" => Some(Self::XPathType(XPathType::new())),
             "cssselectortype" => Some(Self::CssSelectorType(CssSelectorType::new())),
-            #[cfg(feature = "pattern_variant_feature")] "pattern_prop_name_lc" => Some(Self::PatternVariant(PatternVariant::new())),
+            #[cfg(feature = "pattern_variant_feature")] "pattern_prop_ty_lc" => Some(Self::PatternVariant(PatternVariant::new())),
             _ => None,
         }
     }
@@ -47,7 +47,7 @@ impl Types {
             Types::Time(_) => String::from("time"),
             Types::XPathType(_) => String::from("xpathtype"),
             Types::CssSelectorType(_) => String::from("cssselectortype"),
-            #[cfg(feature = "pattern_variant_feature")] Self::PatternVariant(_) => String::from("pattern_prop_name_lc"),
+            #[cfg(feature = "pattern_variant_feature")] Self::PatternVariant(_) => String::from("pattern_prop_ty_lc"),
         }
     }
 }

@@ -150,12 +150,6 @@ fn multi_replace(mut text: String, patterns: &'static [&'static str], values: Ve
 
 impl ToWrite {
     pub(crate) fn write_files(table: &mut Table) -> (String, String, String, String) {
-        let mut to_derive = Vec::new();
-        if cfg!(feature = "serde") {
-            to_derive.push(String::from("Serialize"));
-            to_derive.push(String::from("Deserialize"));
-        }
-
         // properties.rs
         let pattern = include_str!("patterns/prop.rs");
         let mut prop_outputs = Vec::new();
@@ -181,7 +175,6 @@ impl ToWrite {
 
             output = output.replace("PatternType", &id_to_token(&property.label));
             output = output.replace("PatternDoc", &doc);
-            output = output.replace("PatternDerive", &to_derive.join(", "));
             output = output.replace("pattern_feature", &property.feature_name());
             output = multi_replace(output, &["PatternVariant", "PatternInnerVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).collect(), property.range_includes.iter().map(|range| id_to_inner(&range.id)).collect()]);
             output = multi_replace(output, &["PatternPrimitiveVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).collect()]);
@@ -225,11 +218,11 @@ impl ToWrite {
             let mut output = pattern.to_string();
             output = output.replace("PatternType", &id_to_token(&class.label));
             output = output.replace("PatternDoc", &class.doc());
-            output = output.replace("PatternDerive", &to_derive.join(", "));
             output = output.replace("pattern_feature", &class.feature_name());
+            output = output.replace("pattern_ty_lc", &class.label.to_lowercase());
             output = multi_replace(
                 output,
-                &["pattern_prop_name_lc", "pattern_property", "PatternProperty", "pattern_prop_type_matcher"],
+                &["pattern_prop_ty_lc", "pattern_property", "PatternProperty", "pattern_prop_type_matcher"],
                 vec![
                     props.iter().map(|prop| prop.label.to_lowercase()).collect(),
                     props.iter().map(|prop| id_to_token(&prop.label).to_case(Case::Snake)).collect(),
@@ -276,7 +269,7 @@ impl ToWrite {
         let mut code_types = include_str!("patterns/types.rs").to_string();
         code_types = multi_replace(
             code_types,
-            &["pattern_variant_feature", "PatternVariant", "pattern_prop_name_lc"],
+            &["pattern_variant_feature", "PatternVariant", "pattern_prop_ty_lc"],
             vec![
                 types_variants.iter().map(|(_,f)| f).cloned().collect(),
                 types_variants.iter().map(|(v,_)| v).cloned().collect(),

@@ -1,49 +1,47 @@
 /// PatternDoc
-#[derive(Debug, Clone, Default, PatternDerive)]
+#[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg(feature = "pattern_feature")]
 pub struct PatternType {
-    pub pattern_property: Vec<PatternPropertyProp>,
-    pub pattern_parent: PatternParent,
+    properties: HashMap<String, Vec<SchemaValue>>,
 }
 
 #[automatically_derived]
 #[cfg(feature = "pattern_feature")]
 impl PatternType {
-    pub fn add_pattern_property(&mut self, value: impl Into<PatternPropertyProp>) { self.pattern_property.push(value.into()) }
+    pub fn property_lc(&self, lc_name: &str) -> &Vec<SchemaValue> {
+        self.properties.get(lc_name).unwrap_or(&EMPTY_VEC)
+    }
 
-    pub fn take_pattern_property(&mut self) -> Vec<PatternPropertyProp> { std::mem::take(&mut self.pattern_property) }
+    pub fn property(&self, name: &str) -> &Vec<SchemaValue> {
+        self.property_lc(&name.to_lowercase())
+    }
 
-    pub fn set_pattern_property(&mut self, value: impl Into<PatternPropertyProp>) { self.pattern_property = vec![value.into()]; }
+    pub fn take_property_lc(&mut self, lc_name: &str) -> Option<Vec<SchemaValue>> {
+        self.properties.remove(lc_name)
+    }
 
-    pub fn set_pattern_property_vec(&mut self, value: Vec<PatternPropertyProp>) { self.pattern_property = value; }
+    pub fn take_property(&mut self, name: &str) -> Option<Vec<SchemaValue>> {
+        self.take_property_lc(&name.to_lowercase())
+    }
 
-    pub fn clear_pattern_property(&mut self) { self.pattern_property.clear(); }
-
-    pub fn set_pattern_parent(&mut self, value: impl Into<PatternParent>) { self.pattern_parent = value.into(); }
+    pub fn pattern_property(&self) -> Option<PatternProperty> { for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {return Some(prop);}}None }
+    
+    pub fn take_pattern_property(&mut self) -> Option<Vec<PatternProperty>> { self.take_property("pattern_prop_ty_lc").map(|values| {values.into_iter().filter_map(|value| value.try_into().ok()).collect()}) }
+    
+    pub fn pattern_property_vec(&self) -> Vec<PatternProperty> { let mut vec = Vec::new();for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {vec.push(prop);}}vec }
 }
 
 #[automatically_derived]
 #[cfg(feature = "pattern_feature")]
-impl Schema for PatternType {
-    fn new() -> Self {
-        Self::default()
-    }
+impl TryFrom<SchemaObject> for PatternType {
+    type Error = ();
 
-    fn has_lc_property(name: &str) -> bool {
-        [
-            "pattern_prop_name_lc",
-        ]
-        .contains(&name)
-        || PatternParent::has_lc_property(name)
-    }
-
-    fn add_lc_property(&mut self, name: &str, value: Types) -> Result<(), Error> {
-        match name {
-            "pattern_prop_name_lc" => return Ok(pattern_prop_type_matcher),
-            _ => {
-                if PatternParent::has_lc_property(name) { return self.pattern_parent.add_lc_property(name, value); }
-                return Err(Error::InvalidProperty);
-            },
+    fn try_from(value: SchemaObject) -> Result<Self, Self::Error> {
+        if value.ty != "pattern_ty_lc" {
+            return Err(());
         }
+
+        Ok(PatternType { properties: value.properties })
     }
 }

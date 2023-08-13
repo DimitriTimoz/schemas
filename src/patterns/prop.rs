@@ -1,5 +1,6 @@
 /// PatternDoc
-#[derive(Debug, Clone, PatternDerive)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg(feature = "pattern_feature")]
 pub enum PatternTypeProp {
     PatternVariant(PatternInnerVariant),
@@ -7,6 +8,7 @@ pub enum PatternTypeProp {
 
 #[automatically_derived] #[cfg(feature = "pattern_feature")] impl From<PatternVariant> for PatternTypeProp { fn from(value: PatternVariant) -> Self { Self::PatternVariant(value) } }
 
+#[automatically_derived]
 #[cfg(feature = "pattern_feature")]
 impl TryFrom<SchemaValue> for RepresentativeOfPageProp {
     type Error = ();
@@ -23,6 +25,7 @@ impl TryFrom<SchemaValue> for RepresentativeOfPageProp {
     }
 }
 
+#[automatically_derived]
 #[cfg(feature = "pattern_feature")]
 impl TryFrom<&SchemaValue> for RepresentativeOfPageProp {
     type Error = ();
