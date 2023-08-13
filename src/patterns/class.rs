@@ -9,6 +9,10 @@ pub struct PatternType {
 #[automatically_derived]
 #[cfg(feature = "pattern_feature")]
 impl PatternType {
+    pub fn new() -> PatternType {
+        PatternType { properties: HashMap::new() }
+    }
+
     pub fn property_lc(&self, lc_name: &str) -> &Vec<SchemaValue> {
         self.properties.get(lc_name).unwrap_or(&EMPTY_VEC)
     }

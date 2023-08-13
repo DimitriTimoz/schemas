@@ -10,15 +10,15 @@ pub enum SchemaValue {
     Integer(i64),
     Boolean(bool),
     Date(String),
-    Time(Date),
-    DateTime(Date),
+    Time(String),
+    DateTime(String),
     Object(SchemaObject),
 }
 
 #[derive(Debug, Clone)]
 pub struct SchemaObject {
-    ty: String,
-    properties: HashMap<String, Vec<SchemaValue>>,
+    pub(crate) ty: String,
+    pub(crate) properties: HashMap<String, Vec<SchemaValue>>,
 }
 
 static EMPTY_VEC: Vec<SchemaValue> = Vec::new();
