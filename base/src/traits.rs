@@ -2,16 +2,15 @@ use crate::prelude::*;
 
 pub trait Schema {
     fn new() -> Self;
-    fn has_lc_property(_name_lc: &str) -> bool { false }
-    fn has_property(name: &str) -> bool {
-        Self::has_lc_property(&name.to_lowercase())
+
+    fn property_lc(&self, lc_name: &str) -> &Vec<SchemaValue>;
+    fn property(&self, name: &str) -> &Vec<SchemaValue> {
+        self.property_lc(&name.to_lowercase())
     }
-    fn add_lc_property(&mut self, property_lc: &str, value: Types) -> Result<(), Error>;
-    fn add_property(&mut self, property: &str, value: Types) -> Result<(), Error> {
-        self.add_lc_property(&property.to_lowercase(), value)
-    }
-    fn add_text_propery(&mut self, property: &str, value: String) -> Result<(), Error> {
-        self.add_lc_property(&property.to_lowercase(), Types::Text(value.into()))
+
+    fn take_property_lc(&mut self, lc_name: &str) -> Option<Vec<SchemaValue>>;
+    fn take_property(&mut self, name: &str) -> Option<Vec<SchemaValue>> {
+        self.take_property_lc(&name.to_lowercase())
     }
 }
 

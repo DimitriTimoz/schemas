@@ -8,27 +8,23 @@ pub struct PatternType {
 
 #[automatically_derived]
 #[cfg(feature = "pattern_feature")]
-impl PatternType {
-    pub fn new() -> PatternType {
+impl Schema for PatternType {
+    fn new() -> PatternType {
         PatternType { properties: HashMap::new() }
     }
 
-    pub fn property_lc(&self, lc_name: &str) -> &Vec<SchemaValue> {
+    fn property_lc(&self, lc_name: &str) -> &Vec<SchemaValue> {
         self.properties.get(lc_name).unwrap_or(&EMPTY_VEC)
     }
 
-    pub fn property(&self, name: &str) -> &Vec<SchemaValue> {
-        self.property_lc(&name.to_lowercase())
-    }
-
-    pub fn take_property_lc(&mut self, lc_name: &str) -> Option<Vec<SchemaValue>> {
+    fn take_property_lc(&mut self, lc_name: &str) -> Option<Vec<SchemaValue>> {
         self.properties.remove(lc_name)
     }
+}
 
-    pub fn take_property(&mut self, name: &str) -> Option<Vec<SchemaValue>> {
-        self.take_property_lc(&name.to_lowercase())
-    }
-
+#[automatically_derived]
+#[cfg(feature = "pattern_feature")]
+impl PatternType {
     #[cfg(feature = "pattern_prop_feature")] pub fn pattern_property(&self) -> Option<PatternPropertyProp> { for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {return Some(prop);}}None }
     
     #[cfg(feature = "pattern_prop_feature")] pub fn take_pattern_property(&mut self) -> Option<Vec<PatternPropertyProp>> { self.take_property("pattern_prop_ty_lc").map(|values| {values.into_iter().filter_map(|value| value.try_into().ok()).collect()}) }

@@ -167,11 +167,6 @@ impl ToWrite {
                     tmp
                 })
                 .collect::<Vec<_>>();
-            
-            if variants.len() == 1 && variants[0].id.to_lowercase() == "schema:text" {
-                prop_outputs.push(format!("/// {doc}\n#[cfg(feature = \"{}\")] pub type {}Prop = TextOnlyProp;", property.feature_name(), id_to_token(&property.label)));
-                continue;
-            }
 
             output = output.replace("PatternType", &id_to_token(&property.label));
             output = output.replace("PatternDoc", &doc);
@@ -185,10 +180,6 @@ impl ToWrite {
         // types.rs
         let mut outputs: Vec<String> = Vec::new();
         let pattern = include_str!("patterns/class.rs");
-        let prop_type_matcher_pattern = r#"match value {
-                Types::PatternPropVariant(value) => self.pattern_property.push(PatternPropertyProp::from(value)),
-                _ => return Err(Error::InvalidType),
-            }"#;
         for class in table.classes.values() {
             if PRIMITIVE_LC_TYPES.contains(&class.label.to_lowercase().as_str()) {
                 continue;
