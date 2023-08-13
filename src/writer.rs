@@ -155,10 +155,8 @@ impl ToWrite {
         let mut prop_outputs = Vec::new();
         for property in table.properties.values() {
             let mut output = pattern.to_string();
-            let doc = property.doc();
-
             output = output.replace("PatternType", &id_to_token(&property.label));
-            output = output.replace("PatternDoc", &doc);
+            output = output.replace("PatternDoc", &property.doc());
             output = output.replace("pattern_feature", &property.feature_name());
             output = multi_replace(output, &["PatternVariant", "PatternInnerVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).collect(), property.range_includes.iter().map(|range| id_to_inner(&range.id)).collect()]);
             output = multi_replace(output, &["PatternPrimitiveVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).collect()]);
