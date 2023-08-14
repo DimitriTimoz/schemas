@@ -46,7 +46,7 @@ impl TryFrom<SchemaObject> for PatternType {
     fn try_from(value: SchemaObject) -> Result<Self, Self::Error> {
         if ![
                 "pattern_child_ty_lc",
-            ].contains(value.ty)
+            ].contains(&value.ty.as_str())
         {
             return Err(());
         }
