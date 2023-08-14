@@ -4,7 +4,7 @@
 /// - `pattern_property` ([PatternPropertyProp])
 /// 
 /// Descends from the following classes (enable them for conversion traits):
-/// - [`PatternParent`]
+/// - [`PatternParent`](PatternParentTrait)
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg(feature = "pattern_feature")]
@@ -12,7 +12,18 @@ pub struct PatternType {
     properties: HashMap<String, Vec<SchemaValue>>,
 }
 
-#[automatically_derived]
+/// A trait implemented on [PatternType]s and its subclasses.
+#[cfg(feature = "pattern_feature")]
+pub trait PatternTypeTrait: Schema {
+    #[cfg(feature = "pattern_prop_feature")] fn pattern_property(&self) -> Option<PatternPropertyProp> { for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {return Some(prop);}}None }
+    
+    #[cfg(feature = "pattern_prop_feature")] fn take_pattern_property(&mut self) -> Option<Vec<PatternPropertyProp>>  { self.take_property("pattern_prop_ty_lc").map(|values| {values.into_iter().filter_map(|value| value.try_into().ok()).collect()}) }
+    
+    #[cfg(feature = "pattern_prop_feature")] fn pattern_property_vec(&self) -> Vec<PatternPropertyProp> { let mut vec = Vec::new();for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {vec.push(prop);}}vec }
+}
+
+#[cfg(all(feature = "pattern_feature", feature = "PatternParent"))] impl PatternParentTrait for PatternType {}
+
 #[cfg(feature = "pattern_feature")]
 impl Schema for PatternType {
     fn new() -> PatternType {
@@ -28,17 +39,6 @@ impl Schema for PatternType {
     }
 }
 
-#[automatically_derived]
-#[cfg(feature = "pattern_feature")]
-impl PatternType {
-    #[cfg(feature = "pattern_prop_feature")] pub fn pattern_property(&self) -> Option<PatternPropertyProp> { for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {return Some(prop);}}None }
-    
-    #[cfg(feature = "pattern_prop_feature")] pub fn take_pattern_property(&mut self) -> Option<Vec<PatternPropertyProp>> { self.take_property("pattern_prop_ty_lc").map(|values| {values.into_iter().filter_map(|value| value.try_into().ok()).collect()}) }
-    
-    #[cfg(feature = "pattern_prop_feature")] pub fn pattern_property_vec(&self) -> Vec<PatternPropertyProp> { let mut vec = Vec::new();for value in self.property("pattern_prop_ty_lc") {if let Ok(prop) = value.try_into() {vec.push(prop);}}vec }
-}
-
-#[automatically_derived]
 #[cfg(feature = "pattern_feature")]
 impl TryFrom<SchemaObject> for PatternType {
     type Error = ();
