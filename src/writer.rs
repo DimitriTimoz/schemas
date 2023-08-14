@@ -201,7 +201,6 @@ impl ToWrite {
                     break;
                 }
             }
-            parents.remove(0);
 
             let mut output = pattern.to_string();
             output = output.replace("PatternType", &id_to_token(&class.label));
