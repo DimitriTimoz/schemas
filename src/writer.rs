@@ -167,7 +167,7 @@ impl ToWrite {
         // types.rs
         let mut outputs: Vec<String> = Vec::new();
         let pattern = include_str!("patterns/class.rs");
-        for class in table.classes.values() {
+        for (class_id, class) in table.classes.iter() {
             if PRIMITIVE_LC_TYPES.contains(&class.label.to_lowercase().as_str()) {
                 continue;
             }
@@ -202,11 +202,25 @@ impl ToWrite {
                 }
             }
 
+            let mut children = vec![class_id.to_owned()];
+            loop {
+                let start_len = children.len();
+                for child in children.clone() {
+                    children.extend(table.classes.iter().filter(|(_,c)| c.sub_classes.iter().any(|sub_class| sub_class.id == child)).map(|(id,_)| id.to_owned()));
+                }
+                children.sort();
+                children.dedup();
+                if children.len() == start_len {
+                    break;
+                }
+            }
+            children = children.into_iter().filter_map(|child| table.classes.get(&child)).map(|child| child.label.to_owned()).collect::<Vec<_>>();
+            
             let mut output = pattern.to_string();
             output = output.replace("PatternType", &id_to_token(&class.label));
             output = output.replace("PatternDoc", &class.doc());
             output = output.replace("pattern_feature", &class.feature_name());
-            output = output.replace("pattern_ty_lc", &class.label.to_lowercase());
+            output = multi_replace(output, &["pattern_child_ty_lc"], vec![children.iter().map(|child| child.to_lowercase()).collect()]);
             output = multi_replace(
                 output,
                 &["pattern_prop_ty_lc", "pattern_property", "PatternProperty", "pattern_prop_feature"],
