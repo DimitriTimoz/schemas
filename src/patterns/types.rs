@@ -22,6 +22,7 @@ impl Types {
     pub fn lc_ty(&self) -> String {
         match self {
             #[cfg(feature = "pattern_variant_feature")] Self::PatternVariant(_) => String::from("pattern_prop_ty_lc"),
+            _ => String::from("none"),
         }
     }
 }
