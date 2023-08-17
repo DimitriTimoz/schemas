@@ -9,6 +9,7 @@
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg(feature = "pattern_feature")]
 pub struct PatternType {
+    ty: String,
     properties: HashMap<String, Vec<SchemaValue>>,
 }
 
@@ -27,7 +28,10 @@ pub trait PatternTypeTrait: Schema {
 #[cfg(feature = "pattern_feature")]
 impl Schema for PatternType {
     fn new() -> PatternType {
-        PatternType { properties: HashMap::new() }
+        PatternType {
+            ty: String::from("pattern_ty_lc"),
+            properties: HashMap::new()
+        }
     }
 
     fn property_lc(&self, lc_name: &str) -> &Vec<SchemaValue> {
@@ -51,6 +55,13 @@ impl TryFrom<SchemaObject> for PatternType {
             return Err(());
         }
 
-        Ok(PatternType { properties: value.properties })
+        Ok(PatternType { ty: value.ty, properties: value.properties })
+    }
+}
+
+#[cfg(feature = "pattern_feature")]
+impl From<PatternType> for SchemaObject {
+    fn from(value: PatternType) -> SchemaObject {
+        SchemaObject { ty: value.ty, properties: value.properties }
     }
 }

@@ -229,6 +229,7 @@ impl ToWrite {
             output = output.replace("PatternType", &id_to_token(&class.label));
             output = output.replace("PatternDoc", &class.doc());
             output = output.replace("pattern_feature", &class.feature_name());
+            output = output.replace("pattern_ty_lc", &class.label.to_lowercase());
             output = multi_replace(output, &["pattern_child_ty_lc"], vec![children.iter().map(|child| child.to_lowercase()).collect()]);
             output = multi_replace(
                 output,
