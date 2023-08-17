@@ -36,6 +36,20 @@ const PRIMITIVE_LC_TYPES: [&str; 10] = [
     "xpathtype",
     "cssselectortype",
 ];
+
+const PRIMITIVE_TYPE_INNER: [&str; 10] = [
+    "String",
+    "f64",
+    "i64",
+    "bool",
+    "String",
+    "String",
+    "String",
+    "String",
+    "String",
+    "String",
+];
+
 const DIGITS: [&str; 10] = [
     "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
 ];
@@ -55,7 +69,7 @@ pub fn id_to_token(id: &str) -> String {
         }
     }
 
-    let token: String = token_vec.into_iter().collect();
+    let mut token: String = token_vec.into_iter().collect();
     // Replace first char if it's a digit
     if !token.is_empty()
         && token
@@ -72,7 +86,21 @@ pub fn id_to_token(id: &str) -> String {
             .unwrap() as usize;
         return DIGITS[digit].to_string() + &token[1..];
     }
+
     token
+}
+
+pub fn id_to_inner(id: &str) -> String {
+    let token = id_to_token(id);
+
+    let primitive_idx = PRIMITIVE_LC_TYPES
+        .iter()
+        .position(|primitive| primitive == &token.to_lowercase());
+    if let Some(idx) = primitive_idx {
+        PRIMITIVE_TYPE_INNER[idx].to_string()
+    } else {
+        token
+    }
 }
 
 #[track_caller]
@@ -122,53 +150,33 @@ fn multi_replace(mut text: String, patterns: &'static [&'static str], values: Ve
 
 impl ToWrite {
     pub(crate) fn write_files(table: &mut Table) -> (String, String, String, String) {
-        let mut to_derive = Vec::new();
-        if cfg!(feature = "serde") {
-            to_derive.push(String::from("Serialize"));
-            to_derive.push(String::from("Deserialize"));
-        }
-
         // properties.rs
         let pattern = include_str!("patterns/prop.rs");
         let mut prop_outputs = Vec::new();
         for property in table.properties.values() {
             let mut output = pattern.to_string();
-            let doc = property.doc();
-            let variants = property
-                .range_includes
-                .iter()
-                .filter(|id| {
-                    let tmp = table.classes.contains_key(&id.to_string());
-                    if !tmp {
-                        println!("Warning: {id} not found in classes.");
-                    }
-                    tmp
-                })
-                .collect::<Vec<_>>();
-
-            
-
-            if variants.len() == 1 && variants[0].id.to_lowercase() == "schema:text" {
-                prop_outputs.push(format!("/// {doc}\n#[cfg(feature = \"{}\")] pub type {}Prop = TextOnlyProp;", property.feature_name(), id_to_token(&property.label)));
-                continue;
-            }
-
             output = output.replace("PatternType", &id_to_token(&property.label));
-            output = output.replace("PatternDoc", &doc);
-            output = output.replace("PatternDerive", &to_derive.join(", "));
+            output = output.replace("PatternDoc", &property.doc());
             output = output.replace("pattern_feature", &property.feature_name());
-            output = multi_replace(output, &["PatternVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).collect()]);
+            output = multi_replace(output, &["PatternVariant", "PatternInnerVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).collect(), property.range_includes.iter().map(|range| id_to_inner(&range.id)).collect()]);
+            output = multi_replace(output, &["PatternPrimitiveVariant", "PatternSecondPrimitiveVariant"], vec![
+                property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).map(|t|
+                    String::from(match t.as_str() {
+                        "CssSelectorType" => "CssSelector",
+                        "XPathType" => "XPath",
+                        t => t
+                    })
+                ).collect(),
+                property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).collect()
+            ]);
+            output = multi_replace(output, &["PatternObjectVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| !PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).collect()]);
             prop_outputs.push(output);
         }
 
         // types.rs
         let mut outputs: Vec<String> = Vec::new();
         let pattern = include_str!("patterns/class.rs");
-        let prop_type_matcher_pattern = r#"match value {
-                Types::PatternPropVariant(value) => self.pattern_property.push(PatternPropertyProp::from(value)),
-                _ => return Err(Error::InvalidType),
-            }"#;
-        for class in table.classes.values() {
+        for (class_id, class) in table.classes.iter() {
             if PRIMITIVE_LC_TYPES.contains(&class.label.to_lowercase().as_str()) {
                 continue;
             }
@@ -183,55 +191,56 @@ impl ToWrite {
                     tmp
                 })
                 .collect::<Vec<_>>();
-            let parents = class.sub_classes
-                .iter()
-                .filter_map(|sub_class| {
-                    let tmp = table.classes.get(&sub_class.id);
-                    if tmp.is_none() {
-                        println!("Sub class {} not found.", sub_class.id);
-                    }
-                    tmp
-                })
-                .collect::<Vec<_>>();
+        
+            let mut parents = vec![class];
+            loop {
+                let start_len = parents.len();
+                for parent in parents.clone() {
+                    parents.extend(parent.sub_classes.iter().filter_map(|sub_class| {
+                        let tmp = table.classes.get(&sub_class.id);
+                        if tmp.is_none() {
+                            println!("Sub class {} not found.", sub_class.id);
+                        }
+                        tmp
+                    }));
+                }
+                parents.sort_by_key(|class| &class.label);
+                parents.dedup_by_key(|class| &class.label);
+                if parents.len() == start_len {
+                    break;
+                }
+            }
 
+            let mut children = vec![class_id.to_owned()];
+            loop {
+                let start_len = children.len();
+                for child in children.clone() {
+                    children.extend(table.classes.iter().filter(|(_,c)| c.sub_classes.iter().any(|sub_class| sub_class.id == child)).map(|(id,_)| id.to_owned()));
+                }
+                children.sort();
+                children.dedup();
+                if children.len() == start_len {
+                    break;
+                }
+            }
+            children = children.into_iter().filter_map(|child| table.classes.get(&child)).map(|child| child.label.to_owned()).collect::<Vec<_>>();
+            
             let mut output = pattern.to_string();
             output = output.replace("PatternType", &id_to_token(&class.label));
             output = output.replace("PatternDoc", &class.doc());
-            output = output.replace("PatternDerive", &to_derive.join(", "));
             output = output.replace("pattern_feature", &class.feature_name());
+            output = multi_replace(output, &["pattern_child_ty_lc"], vec![children.iter().map(|child| child.to_lowercase()).collect()]);
             output = multi_replace(
                 output,
-                &["pattern_prop_name_lc", "pattern_property", "PatternProperty", "pattern_prop_type_matcher"],
+                &["pattern_prop_ty_lc", "pattern_property", "PatternProperty", "pattern_prop_feature"],
                 vec![
                     props.iter().map(|prop| prop.label.to_lowercase()).collect(),
                     props.iter().map(|prop| id_to_token(&prop.label).to_case(Case::Snake)).collect(),
                     props.iter().map(|prop| id_to_token(&prop.label)).collect(),
-                    props.iter()
-                        .map(|prop| {
-                            let variants = prop.range_includes.iter()
-                                .map(|range| id_to_token(&range.id))
-                                .collect::<Vec<String>>();
-                            let mut matcher = prop_type_matcher_pattern.to_string();
-                            matcher = matcher.replace("PatternProperty", &id_to_token(&prop.label));
-                            matcher = matcher.replace("pattern_property", &id_to_token(&prop.label).to_case(Case::Snake));
-                            matcher = multi_replace(matcher, &["PatternPropVariant"], vec![variants]);
-                            matcher
-                        })
-                        .collect(),
+                    props.iter().map(|prop| prop.feature_name()).collect(),
                 ]
             );
-            output = multi_replace(
-                output,
-                &["pattern_parent", "PatternParent"],
-                vec![
-                    parents.iter()
-                        .map(|sub_class| id_to_token(&sub_class.label).to_case(Case::Snake))
-                        .collect(),
-                    parents.iter()
-                        .map(|sub_class| id_to_token(&sub_class.label))
-                        .collect(),
-                ]
-            );
+            output = multi_replace(output, &["PatternParent"], vec![parents.iter().map(|sub_class| id_to_token(&sub_class.label)).collect()]);
             
             outputs.push(output);
 
@@ -248,7 +257,7 @@ impl ToWrite {
         let mut code_types = include_str!("patterns/types.rs").to_string();
         code_types = multi_replace(
             code_types,
-            &["pattern_variant_feature", "PatternVariant", "pattern_prop_name_lc"],
+            &["pattern_variant_feature", "PatternVariant", "pattern_prop_ty_lc"],
             vec![
                 types_variants.iter().map(|(_,f)| f).cloned().collect(),
                 types_variants.iter().map(|(v,_)| v).cloned().collect(),
@@ -262,10 +271,8 @@ impl ToWrite {
             if PRIMITIVE_LC_TYPES.contains(&ty.label.to_lowercase().as_str()) {
                 continue;
             }
-            let mut feature = String::from("pattern_name = [\n    \"pattern_prop_dependency\",\n    \"pattern_dependency\",\n]");
+            let mut feature = String::from("pattern_name = []");
             feature = feature.replace("pattern_name", &ty.feature_name());
-            feature = multi_replace(feature, &["pattern_dependency"], vec![ty.sub_classes.iter().filter_map(|sub_class| table.classes.get(&sub_class.id)).filter(|p| !PRIMITIVE_LC_TYPES.contains(&p.label.to_lowercase().as_str())).map(|c| c.feature_name()).collect::<Vec<_>>()]);
-            feature = multi_replace(feature, &["pattern_prop_dependency"], vec![ty.properties.iter().filter_map(|prop| table.properties.get(&prop.id)).map(|p| p.feature_name()).collect::<Vec<_>>()]);
             features.push(feature);
         }
         for prop in table.properties.values() {
