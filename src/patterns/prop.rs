@@ -8,14 +8,15 @@ pub enum PatternTypeProp {
 
 #[automatically_derived]
 #[cfg(feature = "pattern_feature")]
-impl TryFrom<SchemaValue> for RepresentativeOfPageProp {
+impl TryFrom<SchemaValue> for PatternTypeProp {
     type Error = ();
 
     fn try_from(value: SchemaValue) -> Result<Self, Self::Error> {
         match value {
-            SchemaValue::PatternPrimitiveVariant(v) => Ok(RepresentativeOfPageProp::PatternPrimitiveVariant(v)),
+            SchemaValue::PatternPrimitiveVariant(v) => Ok(PatternTypeProp::PatternSecondPrimitiveVariant(v)),
             SchemaValue::Object(v) => {
-                if let Ok(object) = PatternObjectVariant::try_from(v) { return Ok(RepresentativeOfPageProp::PatternObjectVariant(object)) }
+                // TODO: move clone away
+                if let Ok(object) = PatternObjectVariant::try_from(v.clone()) { return Ok(PatternTypeProp::PatternObjectVariant(object)) }
                 Err(())
             },
             _ => Err(()),
@@ -25,15 +26,15 @@ impl TryFrom<SchemaValue> for RepresentativeOfPageProp {
 
 #[automatically_derived]
 #[cfg(feature = "pattern_feature")]
-impl TryFrom<&SchemaValue> for RepresentativeOfPageProp {
+impl TryFrom<&SchemaValue> for PatternTypeProp {
     type Error = ();
 
     fn try_from(value: &SchemaValue) -> Result<Self, Self::Error> {
         match value {
-            SchemaValue::PatternPrimitiveVariant(v) => Ok(RepresentativeOfPageProp::PatternPrimitiveVariant(v.clone())),
+            SchemaValue::PatternPrimitiveVariant(v) => Ok(PatternTypeProp::PatternSecondPrimitiveVariant(v.clone())),
             SchemaValue::Object(v) => {
                 // TODO: move clone away
-                if let Ok(object) = PatternObjectVariant::try_from(v.clone()) { return Ok(RepresentativeOfPageProp::PatternObjectVariant(object)) }
+                if let Ok(object) = PatternObjectVariant::try_from(v.clone()) { return Ok(PatternTypeProp::PatternObjectVariant(object)) }
                 Err(())
             },
             _ => Err(()),

@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum SchemaValue {
     Text(String),
     Url(String),
@@ -16,6 +17,7 @@ pub enum SchemaValue {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SchemaObject {
     pub(crate) ty: String,
     pub(crate) properties: HashMap<String, Vec<SchemaValue>>,

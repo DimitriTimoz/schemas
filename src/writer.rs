@@ -159,7 +159,16 @@ impl ToWrite {
             output = output.replace("PatternDoc", &property.doc());
             output = output.replace("pattern_feature", &property.feature_name());
             output = multi_replace(output, &["PatternVariant", "PatternInnerVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).collect(), property.range_includes.iter().map(|range| id_to_inner(&range.id)).collect()]);
-            output = multi_replace(output, &["PatternPrimitiveVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).collect()]);
+            output = multi_replace(output, &["PatternPrimitiveVariant", "PatternSecondPrimitiveVariant"], vec![
+                property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).map(|t|
+                    String::from(match t.as_str() {
+                        "CssSelectorType" => "CssSelector",
+                        "XPathType" => "XPath",
+                        t => t
+                    })
+                ).collect(),
+                property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).collect()
+            ]);
             output = multi_replace(output, &["PatternObjectVariant"], vec![property.range_includes.iter().map(|range| id_to_token(&range.id)).filter(|t| !PRIMITIVE_LC_TYPES.contains(&t.to_lowercase().as_str())).collect()]);
             prop_outputs.push(output);
         }
