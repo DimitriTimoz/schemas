@@ -41,3 +41,14 @@ impl TryFrom<&SchemaValue> for PatternTypeProp {
         }
     }
 }
+
+#[automatically_derived]
+#[cfg(feature = "pattern_feature")]
+impl From<PatternTypeProp> for SchemaValue {
+    fn from(value: PatternTypeProp) -> Self {
+        match value {
+            PatternTypeProp::PatternSecondPrimitiveVariant(v) => SchemaValue::PatternPrimitiveVariant(v),
+            PatternTypeProp::PatternObjectVariant(v) => SchemaValue::Object(v.into()),
+        }
+    }
+}
