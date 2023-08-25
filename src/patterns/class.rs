@@ -38,16 +38,12 @@ impl Schema for PatternType {
         }
     }
 
-    fn property_lc(&self, lc_name: &str) -> &Vec<SchemaValue> {
-        self.properties.get(lc_name).unwrap_or(&EMPTY_VEC)
+    fn properties(&self) -> &HashMap<String, Vec<SchemaValue>> {
+        &self.properties
     }
 
-    fn set_property_lc(&mut self, lc_name: &str, values: Vec<SchemaValue>) {
-        self.properties.insert(lc_name.to_string(), values);
-    }
-
-    fn take_property_lc(&mut self, lc_name: &str) -> Option<Vec<SchemaValue>> {
-        self.properties.remove(lc_name)
+    fn properties_mut(&mut self) -> &mut HashMap<String, Vec<SchemaValue>> {
+        &mut self.properties
     }
 }
 
