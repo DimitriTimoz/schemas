@@ -14,7 +14,7 @@ pub trait Schema {
     }
 
     fn set_property_lc(&mut self, lc_name: &str, values: Vec<SchemaValue>) {
-        self.properties_mut().insert(lc_name.to_string(), values)
+        self.properties_mut().insert(lc_name.to_string(), values);
     }
     fn set_property(&mut self, name: &str, values: Vec<SchemaValue>) {
         self.set_property_lc(&name.to_lowercase(), values);
